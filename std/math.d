@@ -5578,7 +5578,6 @@ float rint(float x) @safe pure nothrow @nogc { return rint(cast(real) x); }
 ///
 @safe unittest
 {
-<<<<<<< HEAD
     version (IeeeFlagsSupport) resetIeeeFlags();
     assert(rint(0.4) == 0);
     version(LDC)
@@ -5586,16 +5585,7 @@ float rint(float x) @safe pure nothrow @nogc { return rint(cast(real) x); }
         // inexact bit not set with enabled optimizations
     }
     else version (IeeeFlagsSupport)
-=======
-    version (LDC)
     {
-        // inexact bit not set with enabled optimizations
-    }
-    else version (InlineAsm_X86_Any)
-    {
-        resetIeeeFlags();
-        assert(rint(0.4) == 0);
->>>>>>> ldc
         assert(ieeeFlags.inexact);
     }
 
