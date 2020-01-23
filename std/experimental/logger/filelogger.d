@@ -37,7 +37,7 @@ class FileLogger : Logger
     auto l3 = new FileLogger("logFile", LogLevel.fatal, CreateFolder.yes);
     -------------
     */
-    this(in string fn, const LogLevel lv = LogLevel.all) @safe
+    this(const string fn, const LogLevel lv = LogLevel.all) @safe
     {
          this(fn, lv, CreateFolder.yes);
     }
@@ -63,7 +63,7 @@ class FileLogger : Logger
     auto l2 = new FileLogger(file, LogLevel.fatal);
     -------------
     */
-    this(in string fn, const LogLevel lv, CreateFolder createFileNameFolder) @safe
+    this(const string fn, const LogLevel lv, CreateFolder createFileNameFolder) @safe
     {
         import std.file : exists, mkdirRecurse;
         import std.path : dirName;
@@ -131,8 +131,9 @@ class FileLogger : Logger
 
         auto lt = this.file_.lockingTextWriter();
         systimeToISOString(lt, timestamp);
-        formattedWrite(lt, ":%s:%s:%u ", file[fnIdx .. $],
-            funcName[funIdx .. $], line);
+        import std.conv : to;
+        formattedWrite(lt, " [%s] %s:%u:%s ", logLevel.to!string,
+                file[fnIdx .. $], line, funcName[funIdx .. $]);
     }
 
     /* This methods overrides the base class method and writes the parts of

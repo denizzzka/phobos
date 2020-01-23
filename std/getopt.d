@@ -28,7 +28,7 @@ Distributed under the Boost Software License, Version 1.0.
 */
 module std.getopt;
 
-import std.exception;  // basicExceptionCtors
+import std.exception : basicExceptionCtors;
 import std.traits;
 
 /**
@@ -659,6 +659,7 @@ private template optionValidator(A...)
 
 @system unittest // bugzilla 15914
 {
+    import std.exception : assertThrown;
     bool opt;
     string[] args = ["program", "-a"];
     getopt(args, config.passThrough, 'a', &opt);
@@ -910,13 +911,17 @@ private bool handleOption(R)(string option, R receiver, ref string[] args,
                 }
                 else static if (is(typeof(receiver("")) : void))
                 {
-                    static assert(is(typeof(receiver("")) : void));
+                    alias RType = typeof(receiver(""));
+                    static assert(is(RType : void),
+                            "Invalid receiver return type " ~ RType.stringof);
                     // boolean-style receiver
                     receiver(option);
                 }
                 else
                 {
-                    static assert(is(typeof(receiver()) : void));
+                    alias RType = typeof(receiver());
+                    static assert(is(RType : void),
+                            "Invalid receiver return type " ~ RType.stringof);
                     // boolean-style receiver without argument
                     receiver();
                 }
@@ -1630,14 +1635,15 @@ void defaultGetoptPrinter(string text, Option[] opt)
 
 /** This function writes the passed text and `Option` into an output range
 in the manner described in the documentation of function
-`defaultGetoptPrinter`.
+`defaultGetoptPrinter`, unless the style option is used.
 
 Params:
     output = The output range used to write the help information.
     text = The text to print at the beginning of the help output.
     opt = The `Option` extracted from the `getopt` parameter.
+    style = The manner in which to display the output of each `Option.`
 */
-void defaultGetoptFormatter(Output)(Output output, string text, Option[] opt)
+void defaultGetoptFormatter(Output)(Output output, string text, Option[] opt, string style = "%*s %*s%*s%s\n")
 {
     import std.algorithm.comparison : min, max;
     import std.format : formattedWrite;
@@ -1658,7 +1664,7 @@ void defaultGetoptFormatter(Output)(Output output, string text, Option[] opt)
 
     foreach (it; opt)
     {
-        output.formattedWrite("%*s %*s%*s%s\n", ls, it.optShort, ll, it.optLong,
+        output.formattedWrite(style, ls, it.optShort, ll, it.optLong,
             hasRequired ? re.length : 1, it.required ? re : " ", it.help);
     }
 }
@@ -1743,7 +1749,8 @@ void defaultGetoptFormatter(Output)(Output output, string text, Option[] opt)
 // throw on duplicate options
 @system unittest
 {
-    import core.exception;
+    import core.exception : AssertError;
+    import std.exception : assertNotThrown, assertThrown;
     auto args = ["prog", "--abc", "1"];
     int abc, def;
     assertThrown!AssertError(getopt(args, "abc", &abc, "abc", &abc));
@@ -1857,4 +1864,33 @@ void defaultGetoptFormatter(Output)(Output output, string text, Option[] opt)
     assert(n == -50);
     assert(c == '-');
     assert(f == "-");
+}
+
+@system unittest
+{
+    import std.conv;
+
+    import std.array;
+    import std.string;
+    bool a;
+    auto args = ["prog", "--foo"];
+    auto t = getopt(args, "foo|f", "Help", &a);
+    string s;
+    auto app = appender!string();
+    defaultGetoptFormatter(app, "Some Text", t.options, "\t\t%*s %*s%*s\n%s\n");
+
+    string helpMsg = app.data;
+    //writeln(helpMsg);
+    assert(helpMsg.length);
+    assert(helpMsg.count("\n") == 5, to!string(helpMsg.count("\n")) ~ " "
+        ~ helpMsg);
+    assert(helpMsg.indexOf("--foo") != -1);
+    assert(helpMsg.indexOf("-f") != -1);
+    assert(helpMsg.indexOf("-h") != -1);
+    assert(helpMsg.indexOf("--help") != -1);
+    assert(helpMsg.indexOf("Help") != -1);
+
+    string wanted = "Some Text\n\t\t-f  --foo \nHelp\n\t\t-h --help \nThis help "
+        ~ "information.\n";
+    assert(wanted == helpMsg);
 }

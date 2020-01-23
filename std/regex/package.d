@@ -136,7 +136,7 @@ $(TR $(TD Objects) $(TD
     $(REG_ROW \W, Matches any non-word character.)
     $(REG_ROW \s, Matches whitespace, same as \p{White_Space}.)
     $(REG_ROW \S, Matches any character except those recognized as $(I \s ). )
-    $(REG_ROW \\, Matches \ character. )
+    $(REG_ROW \\\\, Matches \ character. )
     $(REG_ROW \c where c is one of [|*+?(), Matches the character c itself. )
     $(REG_ROW \p{PropertyName}, Matches a character that belongs
         to the Unicode PropertyName set.
@@ -256,12 +256,12 @@ $(TR $(TD Objects) $(TD
     The format string can reference parts of match using the following notation.
     $(REG_TABLE
         $(REG_TITLE Format specifier, Replaced by )
-        $(REG_ROW $$(AMP), the whole match. )
+        $(REG_ROW $(DOLLAR)$(AMP), the whole match. )
         $(REG_ROW $(DOLLAR)$(BACKTICK), part of input $(I preceding) the match. )
         $(REG_ROW $', part of input $(I following) the match. )
         $(REG_ROW $$, '$' character. )
         $(REG_ROW \c $(COMMA) where c is any character, the character c itself. )
-        $(REG_ROW \\, '\' character. )
+        $(REG_ROW \\\\, '\\' character. )
         $(REG_ROW $(DOLLAR)1 .. $(DOLLAR)99, submatch number 1 to 99 respectively. )
     )
 
@@ -298,7 +298,7 @@ module std.regex;
 
 import std.range.primitives, std.traits;
 import std.regex.internal.ir;
-import std.typecons; // : Flag, Yes, No;
+import std.typecons : Flag, Yes, No;
 
 /++
     `Regex` object holds regular expression pattern in compiled form.
@@ -356,13 +356,13 @@ public alias StaticRegex = Regex;
 
     Throws: `RegexException` if there were any errors during compilation.
 +/
-@trusted public auto regex(S)(S[] patterns, const(char)[] flags="")
+@trusted public auto regex(S : C[], C)(const S[] patterns, const(char)[] flags="")
 if (isSomeString!(S))
 {
     import std.array : appender;
     import std.functional : memoize;
     enum cacheSize = 8; //TODO: invent nice interface to control regex caching
-    S pat;
+    const(C)[] pat;
     if (patterns.length > 1)
     {
         auto app = appender!S();
@@ -402,19 +402,42 @@ if (isSomeString!(S))
 ///
 @system unittest
 {
-    // multi-pattern regex example
-    auto multi = regex([`([a-z]+):(\d+)`, `(\d+),\d+`]); // multi regex
-    auto m = "abc:43 12,34".matchAll(multi);
-    assert(m.front.whichPattern == 1);
-    assert(m.front[1] == "abc");
-    assert(m.front[2] == "43");
-    m.popFront();
-    assert(m.front.whichPattern == 2);
-    assert(m.front[1] == "12");
+    void test(S)()
+    {
+        // multi-pattern regex example
+        S[] arr = [`([a-z]+):(\d+)`, `(\d+),\d+`];
+        auto multi = regex(arr); // multi regex
+        S str = "abc:43 12,34";
+        auto m = str.matchAll(multi);
+        assert(m.front.whichPattern == 1);
+        assert(m.front[1] == "abc");
+        assert(m.front[2] == "43");
+        m.popFront();
+        assert(m.front.whichPattern == 2);
+        assert(m.front[1] == "12");
+    }
+
+    import std.meta : AliasSeq;
+    static foreach (C; AliasSeq!(string, wstring, dstring))
+        // Test with const array of patterns - see https://issues.dlang.org/show_bug.cgi?id=20301
+        static foreach (S; AliasSeq!(C, const C, immutable C))
+            test!S();
 }
 
-public auto regexImpl(S)(S pattern, const(char)[] flags="")
-if (isSomeString!(S))
+@system unittest
+{
+    import std.conv : to;
+    import std.string : indexOf;
+
+    immutable pattern = "s+";
+    auto regexString = to!string(regex(pattern, "U"));
+    assert(regexString.length <= pattern.length + 100, "String representation shouldn't be unreasonably bloated.");
+    assert(indexOf(regexString, "s+") >= 0, "String representation should include pattern.");
+    assert(indexOf(regexString, 'U') >= 0, "String representation should include flags.");
+}
+
+public auto regexImpl(S)(const S pattern, const(char)[] flags="")
+if (isSomeString!(typeof(pattern)))
 {
     import std.regex.internal.parser : Parser, CodeGen;
     auto parser = Parser!(Unqual!(typeof(pattern)), CodeGen)(pattern, flags);
@@ -422,6 +445,16 @@ if (isSomeString!(S))
     return r;
 }
 
+
+private struct CTRegexWrapper(Char)
+{
+    private immutable(Regex!Char)* re;
+
+    // allow code that expects mutable Regex to still work
+    // we stay "logically const"
+    @property @trusted ref getRe() const { return *cast(Regex!Char*) re; }
+    alias getRe this;
+}
 
 template ctRegexImpl(alias pattern, string flags=[])
 {
@@ -437,14 +470,7 @@ template ctRegexImpl(alias pattern, string flags=[])
     }
     static immutable staticRe =
         cast(immutable) r.withFactory(new CtfeFactory!(BacktrackingMatcher, Char, func));
-    struct Wrapper
-    {
-        // allow code that expects mutable Regex to still work
-        // we stay "logically const"
-        @property @trusted ref getRe() const { return *cast(Regex!Char*)&staticRe; }
-        alias getRe this;
-    }
-    enum wrapper = Wrapper();
+    enum wrapper = CTRegexWrapper!Char(&staticRe);
 }
 
 @safe unittest
@@ -455,6 +481,17 @@ template ctRegexImpl(alias pattern, string flags=[])
     }
     enum re = ctRegex!``;
     test(re);
+}
+
+@safe unittest
+{
+    auto re = ctRegex!`foo`;
+    assert(matchFirst("foo", re));
+
+    // test reassignment
+    re = ctRegex!`bar`;
+    assert(matchFirst("bar", re));
+    assert(!matchFirst("bar", ctRegex!`foo`));
 }
 
 /++
@@ -512,6 +549,12 @@ private:
         _f = 0;
     }
 
+    inout(R) getMatch(size_t index) inout
+    {
+        auto m = &matches[index];
+        return *m ? _input[m.begin .. m.end] : null;
+    }
+
 public:
     ///Slice of input prior to the match.
     @property R pre()
@@ -536,14 +579,14 @@ public:
     @property R front()
     {
         assert(_nMatch, "attempted to get front of an empty match");
-        return _input[matches[_f].begin .. matches[_f].end];
+        return getMatch(_f);
     }
 
     ///ditto
     @property R back()
     {
         assert(_nMatch, "attempted to get back of an empty match");
-        return _input[matches[_b - 1].begin .. matches[_b - 1].end];
+        return getMatch(_b - 1);
     }
 
     ///ditto
@@ -567,9 +610,7 @@ public:
     inout(R) opIndex()(size_t i) inout
     {
         assert(_f + i < _b,text("requested submatch number ", i," is out of range"));
-        assert(matches[_f + i].begin <= matches[_f + i].end,
-            text("wrong match: ", matches[_f + i].begin, "..", matches[_f + i].end));
-        return _input[matches[_f + i].begin .. matches[_f + i].end];
+        return getMatch(_f + i);
     }
 
     /++
@@ -619,7 +660,7 @@ public:
         if (isSomeString!String)
     {
         size_t index = lookupNamedGroup(_names, i);
-        return _input[matches[index].begin .. matches[index].end];
+        return getMatch(index);
     }
 
     ///Number of matches in this object.
@@ -649,6 +690,11 @@ public:
     assert(c.empty);
 
     assert(!matchFirst("nothing", "something"));
+
+    // Captures that are not matched will be null.
+    c = matchFirst("ac", regex(`a(b)?c`));
+    assert(c);
+    assert(!c[1]);
 }
 
 @system unittest
@@ -657,6 +703,15 @@ public:
     string s = "abc";
     assert(cast(bool)(c = matchFirst(s, regex("d")))
         || cast(bool)(c = matchFirst(s, regex("a"))));
+}
+
+@system unittest // Issue 19979
+{
+    auto c = matchFirst("bad", regex(`(^)(not )?bad($)`));
+    assert(c[0] && c[0].length == "bad".length);
+    assert(c[1] && !c[1].length);
+    assert(!c[2]);
+    assert(c[3] && !c[3].length);
 }
 
 /++
@@ -668,6 +723,7 @@ public:
 @trusted public struct RegexMatch(R)
 if (isSomeString!R)
 {
+    import std.typecons : Rebindable;
 private:
     alias Char = BasicElementOf!R;
     Matcher!Char _engine;

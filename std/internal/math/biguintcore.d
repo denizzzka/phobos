@@ -33,18 +33,18 @@ Idioms:
 */
 module std.internal.math.biguintcore;
 
-version(D_InlineAsm_X86)
+version (D_InlineAsm_X86)
 {
     static import std.internal.math.biguintx86;
 }
-version(LDC)
+version (LDC)
 {
-    version(D_InlineAsm_X86)
+    version (D_InlineAsm_X86)
         version = HaveAsmVersion;
 
-    version(ARM)
+    version (ARM)
     {
-        version(ARM_Thumb) {}
+        version (ARM_Thumb) {}
         else
         {
             static import std.internal.math.biguintarm;
@@ -72,16 +72,16 @@ private:
 // dipatchers to the right low-level primitives. Added to allow BigInt CTFE for
 // 32 bit systems (issue 14767) although it's used by the other architectures too.
 // See comments below in case it has to be refactored.
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 uint multibyteAddSub(char op)(uint[] dest, const(uint)[] src1, const (uint)[] src2, uint carry)
 {
     // must be checked before, otherwise D_InlineAsm_X86 is true.
     if (__ctfe)
         return std.internal.math.biguintnoasm.multibyteAddSub!op(dest, src1, src2, carry);
     // Runtime.
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         return std.internal.math.biguintx86.multibyteAddSub!op(dest, src1, src2, carry);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         return std.internal.math.biguintarm.multibyteAddSub!op(dest, src1, src2, carry);
     // Runtime if no asm available.
     else
@@ -90,140 +90,140 @@ uint multibyteAddSub(char op)(uint[] dest, const(uint)[] src1, const (uint)[] sr
 // Any other architecture
 else alias multibyteAddSub = std.internal.math.biguintnoasm.multibyteAddSub;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 uint multibyteIncrementAssign(char op)(uint[] dest, uint carry)
 {
     if (__ctfe)
         return std.internal.math.biguintnoasm.multibyteIncrementAssign!op(dest, carry);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         return std.internal.math.biguintx86.multibyteIncrementAssign!op(dest, carry);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         return std.internal.math.biguintarm.multibyteIncrementAssign!op(dest, carry);
     else
         return std.internal.math.biguintnoasm.multibyteIncrementAssign!op(dest, carry);
 }
 else alias multibyteIncrementAssign = std.internal.math.biguintnoasm.multibyteIncrementAssign;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 uint multibyteShl()(uint[] dest, const(uint)[] src, uint numbits)
 {
     if (__ctfe)
         return std.internal.math.biguintnoasm.multibyteShl(dest, src, numbits);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         return std.internal.math.biguintx86.multibyteShl(dest, src, numbits);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         return std.internal.math.biguintarm.multibyteShl(dest, src, numbits);
     else
         return std.internal.math.biguintnoasm.multibyteShl(dest, src, numbits);
 }
 else alias multibyteShl = std.internal.math.biguintnoasm.multibyteShl;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 void multibyteShr()(uint[] dest, const(uint)[] src, uint numbits)
 {
     if (__ctfe)
         std.internal.math.biguintnoasm.multibyteShr(dest, src, numbits);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         std.internal.math.biguintx86.multibyteShr(dest, src, numbits);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         std.internal.math.biguintarm.multibyteShr(dest, src, numbits);
     else
         std.internal.math.biguintnoasm.multibyteShr(dest, src, numbits);
 }
 else alias multibyteShr = std.internal.math.biguintnoasm.multibyteShr;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 uint multibyteMul()(uint[] dest, const(uint)[] src, uint multiplier, uint carry)
 {
     if (__ctfe)
         return std.internal.math.biguintnoasm.multibyteMul(dest, src, multiplier, carry);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         return std.internal.math.biguintx86.multibyteMul(dest, src, multiplier, carry);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         return std.internal.math.biguintarm.multibyteMul(dest, src, multiplier, carry);
     else
         return std.internal.math.biguintnoasm.multibyteMul(dest, src, multiplier, carry);
 }
 else alias multibyteMul = std.internal.math.biguintnoasm.multibyteMul;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 uint multibyteMulAdd(char op)(uint[] dest, const(uint)[] src, uint multiplier, uint carry)
 {
     if (__ctfe)
         return std.internal.math.biguintnoasm.multibyteMulAdd!op(dest, src, multiplier, carry);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         return std.internal.math.biguintx86.multibyteMulAdd!op(dest, src, multiplier, carry);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         return std.internal.math.biguintarm.multibyteMulAdd!op(dest, src, multiplier, carry);
     else
         return std.internal.math.biguintnoasm.multibyteMulAdd!op(dest, src, multiplier, carry);
 }
 else alias multibyteMulAdd = std.internal.math.biguintnoasm.multibyteMulAdd;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 void multibyteMultiplyAccumulate()(uint[] dest, const(uint)[] left, const(uint)[] right)
 {
     if (__ctfe)
         std.internal.math.biguintnoasm.multibyteMultiplyAccumulate(dest, left, right);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         std.internal.math.biguintx86.multibyteMultiplyAccumulate(dest, left, right);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         std.internal.math.biguintarm.multibyteMultiplyAccumulate(dest, left, right);
     else
         std.internal.math.biguintnoasm.multibyteMultiplyAccumulate(dest, left, right);
 }
 else alias multibyteMultiplyAccumulate = std.internal.math.biguintnoasm.multibyteMultiplyAccumulate;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 uint multibyteDivAssign()(uint[] dest, uint divisor, uint overflow)
 {
     if (__ctfe)
         return std.internal.math.biguintnoasm.multibyteDivAssign(dest, divisor, overflow);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         return std.internal.math.biguintx86.multibyteDivAssign(dest, divisor, overflow);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         return std.internal.math.biguintarm.multibyteDivAssign(dest, divisor, overflow);
     else
         return std.internal.math.biguintnoasm.multibyteDivAssign(dest, divisor, overflow);
 }
 else alias multibyteDivAssign = std.internal.math.biguintnoasm.multibyteDivAssign;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 void multibyteAddDiagonalSquares()(uint[] dest, const(uint)[] src)
 {
     if (__ctfe)
         std.internal.math.biguintnoasm.multibyteAddDiagonalSquares(dest, src);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         std.internal.math.biguintx86.multibyteAddDiagonalSquares(dest, src);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         std.internal.math.biguintarm.multibyteAddDiagonalSquares(dest, src);
     else
         std.internal.math.biguintnoasm.multibyteAddDiagonalSquares(dest, src);
 }
 else alias multibyteAddDiagonalSquares = std.internal.math.biguintnoasm.multibyteAddDiagonalSquares;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 void multibyteTriangleAccumulate()(uint[] dest, const(uint)[] x)
 {
     if (__ctfe)
         std.internal.math.biguintnoasm.multibyteTriangleAccumulate(dest, x);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         std.internal.math.biguintx86.multibyteTriangleAccumulate(dest, x);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         std.internal.math.biguintarm.multibyteTriangleAccumulate(dest, x);
     else
         std.internal.math.biguintnoasm.multibyteTriangleAccumulate(dest, x);
 }
 else alias multibyteTriangleAccumulate = std.internal.math.biguintnoasm.multibyteTriangleAccumulate;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 void multibyteSquare()(BigDigit[] result, const(BigDigit)[] x)
 {
     if (__ctfe)
         std.internal.math.biguintnoasm.multibyteSquare(result, x);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         std.internal.math.biguintx86.multibyteSquare(result, x);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         std.internal.math.biguintarm.multibyteSquare(result, x);
     else
         std.internal.math.biguintnoasm.multibyteSquare(result, x);
@@ -277,7 +277,8 @@ struct BigUint
 private:
     pure invariant()
     {
-        assert( data.length >= 1 && (data.length == 1 || data[$-1] != 0 ));
+        assert( data.length >= 1 && (data.length == 1 || data[$-1] != 0 ),
+                "Invariant requires data to not empty or zero");
     }
 
     immutable(BigDigit) [] data = ZERO;
@@ -637,9 +638,10 @@ public:
     // All of these member functions create a new BigUint.
 
     // return x >> y
-    BigUint opShr(Tulong)(Tulong y) pure nothrow const if (is (Tulong == ulong))
+    BigUint opBinary(string op, Tulong)(Tulong y) pure nothrow const
+        if (op == ">>" && is (Tulong == ulong))
     {
-        assert(y>0);
+        assert(y > 0, "Can not right shift BigUint by 0");
         uint bits = cast(uint) y & BIGDIGITSHIFTMASK;
         if ((y >> LG2BIGDIGITBITS) >= data.length) return BigUint(ZERO);
         uint words = cast(uint)(y >> LG2BIGDIGITBITS);
@@ -660,12 +662,14 @@ public:
     }
 
     // return x << y
-    BigUint opShl(Tulong)(Tulong y) pure nothrow const if (is (Tulong == ulong))
+    BigUint opBinary(string op, Tulong)(Tulong y) pure nothrow const
+        if (op == "<<" && is (Tulong == ulong))
     {
-        assert(y>0);
+        assert(y > 0, "Can not left shift BigUint by 0");
         if (isZero()) return this;
         uint bits = cast(uint) y & BIGDIGITSHIFTMASK;
-        assert((y >> LG2BIGDIGITBITS) < cast(ulong)(uint.max));
+        assert((y >> LG2BIGDIGITBITS) < cast(ulong)(uint.max),
+                "Shift result exceeds temporary store");
         uint words = cast(uint)(y >> LG2BIGDIGITBITS);
         BigDigit [] result = new BigDigit[data.length + words+1];
         result[0 .. words] = 0;
@@ -758,12 +762,14 @@ public:
 
 
     //  return x*y.
-    //  y must not be zero.
     static BigUint mulInt(T = ulong)(BigUint x, T y) pure nothrow
     {
         if (y == 0 || x == 0) return BigUint(ZERO);
-        uint hi = cast(uint)(y >>> 32);
-        uint lo = cast(uint)(y & 0xFFFF_FFFF);
+        static if (T.sizeof * 8 <= 32)
+            uint hi = 0;
+        else
+            uint hi = cast(uint) (y >>> 32);
+        uint lo = cast(uint) (y & 0xFFFF_FFFF);
         uint [] result = new BigDigit[x.data.length+1+(hi != 0)];
         result[x.data.length] = multibyteMul(result[0 .. x.data.length], x.data, lo, 0);
         if (hi != 0)
@@ -843,7 +849,7 @@ public:
     {
         import core.memory : GC;
         uint y = y_;
-        assert(y != 0);
+        assert(y != 0, "% 0 not allowed");
         if ((y&(-y)) == y)
         {   // perfect power of 2
             return x.data[0] & (y-1);
@@ -955,7 +961,7 @@ public:
         // If true, then x0 is that digit
         // and the result will be (x0 ^^ y) * (2^^(firstnonzero*y*BigDigitBits))
         BigDigit x0 = x.data[firstnonzero];
-        assert(x0 != 0);
+        assert(x0 != 0, "pow(0, y) not allowed");
         // Length of the non-zero portion
         size_t nonzerolength = x.data.length - firstnonzero;
         ulong y0;
@@ -1144,9 +1150,9 @@ public:
     }
 
     // Implement toHash so that BigUint works properly as an AA key.
-    size_t toHash() const @trusted nothrow
+    size_t toHash() const @nogc nothrow pure @safe
     {
-        return typeid(data).getHash(&data);
+        return .hashOf(data);
     }
 
 } // end BigUint
@@ -1163,6 +1169,14 @@ public:
     assert(z == 0UL);
     assert(!(z > 0UL));
     assert(!(z < 0UL));
+}
+
+// issue 16223
+@system pure nothrow unittest
+{
+    BigUint a = [3];
+    int b = 5;
+    assert(BigUint.mulInt(a,b) == 15);
 }
 
 // Remove leading zeros from x, to restore the BigUint invariant
@@ -1342,7 +1356,7 @@ T intpow(T)(T x, ulong n) pure nothrow @safe
 //  returns the maximum power of x that will fit in a uint.
 int highestPowerBelowUintMax(uint x) pure nothrow @safe
 {
-     assert(x>1);
+     assert(x > 1, "x must be greater than 1");
      static immutable ubyte [22] maxpwr = [ 31, 20, 15, 13, 12, 11, 10, 10, 9, 9,
                                           8, 8, 8, 8, 7, 7, 7, 7, 7, 7, 7, 7];
      if (x<24) return maxpwr[x-2];
@@ -1357,7 +1371,7 @@ int highestPowerBelowUintMax(uint x) pure nothrow @safe
 //  returns the maximum power of x that will fit in a ulong.
 int highestPowerBelowUlongMax(uint x) pure nothrow @safe
 {
-     assert(x>1);
+     assert(x > 1, "x must be greater than 1");
      static immutable ubyte [39] maxpwr = [ 63, 40, 31, 27, 24, 22, 21, 20, 19, 18,
                                          17, 17, 16, 16, 15, 15, 15, 15, 14, 14,
                                          14, 14, 13, 13, 13, 13, 13, 13, 13, 12,
@@ -1375,10 +1389,10 @@ int highestPowerBelowUlongMax(uint x) pure nothrow @safe
      return 2;
 }
 
-version(unittest)
+version (unittest)
 {
 
-int slowHighestPowerBelowUintMax(uint x) pure nothrow @safe
+private int slowHighestPowerBelowUintMax(uint x) pure nothrow @safe
 {
      int pwr = 1;
      for (ulong q = x;x*q < cast(ulong) uint.max; )
@@ -1552,9 +1566,10 @@ void mulInternal(BigDigit[] result, const(BigDigit)[] x, const(BigDigit)[] y)
     pure nothrow
 {
     import core.memory : GC;
-    assert( result.length == x.length + y.length );
-    assert( y.length > 0 );
-    assert( x.length >= y.length);
+    assert( result.length == x.length + y.length,
+            "result array must have enough space to store computed result");
+    assert( y.length > 0, "y must not be empty");
+    assert( x.length >= y.length, "x must be greater or equal than y");
     if (y.length <= KARATSUBALIMIT)
     {
         // Small multiplier, we'll just use the asm classic multiply.
@@ -1623,7 +1638,8 @@ void mulInternal(BigDigit[] result, const(BigDigit)[] x, const(BigDigit)[] y)
             mulKaratsuba(result[0 .. half + y.length], y, x[0 .. half], scratchbuff);
             partial[] = result[half .. half + y.length];
             mulKaratsuba(result[half .. $], y, x[half .. $], scratchbuff);
-            addAssignSimple(result[half .. half + y.length], partial);
+            BigDigit c = addAssignSimple(result[half .. half + y.length], partial);
+            if (c) multibyteIncrementAssign!('+')(result[half + y.length..$], c);
             () @trusted { GC.free(scratchbuff.ptr); } ();
         }
         else
@@ -1640,7 +1656,8 @@ void mulInternal(BigDigit[] result, const(BigDigit)[] x, const(BigDigit)[] y)
                 // Every chunk will either have size chunksize, or chunksize+1.
                 maxchunk = chunksize + 1;
                 paddingY = true;
-                assert(chunksize + extra + chunksize *(numchunks-1) == x.length );
+                assert(chunksize + extra + chunksize *(numchunks-1) == x.length,
+                    "Unexpected size");
             }
             else
             {
@@ -1649,7 +1666,8 @@ void mulInternal(BigDigit[] result, const(BigDigit)[] x, const(BigDigit)[] y)
                 maxchunk = chunksize;
                 ++numchunks;
                 paddingY = false;
-                assert(extra + chunksize *(numchunks-1) == x.length );
+                assert(extra + chunksize *(numchunks-1) == x.length,
+                    "Unexpected size");
             }
             // We make the buffer a bit bigger so we have space for the partial sums.
             BigDigit [] scratchbuff = new BigDigit[karatsubaRequiredBuffSize(maxchunk) + y.length];
@@ -1702,7 +1720,8 @@ void squareInternal(BigDigit[] result, const BigDigit[] x) pure nothrow
   import core.memory : GC;
   // Squaring is potentially half a multiply, plus add the squares of
   // the diagonal elements.
-  assert(result.length == 2*x.length);
+  assert(result.length == 2*x.length,
+     "result needs to have twice the capacity of x");
   if (x.length <= KARATSUBASQUARELIMIT)
   {
       if (x.length == 1)
@@ -1726,10 +1745,12 @@ void divModInternal(BigDigit [] quotient, BigDigit[] remainder, const BigDigit [
         const BigDigit [] v) pure nothrow
 {
     import core.memory : GC;
-    assert(quotient.length == u.length - v.length + 1);
-    assert(remainder == null || remainder.length == v.length);
-    assert(v.length > 1);
-    assert(u.length >= v.length);
+    assert(quotient.length == u.length - v.length + 1,
+        "Invalid quotient length");
+    assert(remainder == null || remainder.length == v.length,
+        "Invalid remainder");
+    assert(v.length > 1, "v must have more than 1 element");
+    assert(u.length >= v.length, "u must be as longer or longer than v");
 
     // Normalize by shifting v left just enough so that
     // its high-order bit is on, and shift u left the
@@ -1840,10 +1861,10 @@ size_t biguintToOctal(char[] buff, const(BigDigit)[] data)
         if (shift < 0)
         {
             // Some bits were carried over from previous word.
-            assert(shift > -3);
+            assert(shift > -3, "shift must be greater than -3");
             output(((bigdigit << -shift) | carry) & 0b111);
             shift += 3;
-            assert(shift > 0);
+            assert(shift > 0, "shift must be 1 or greater");
         }
 
         while (shift <= BigDigitBits - 3)
@@ -1858,13 +1879,13 @@ size_t biguintToOctal(char[] buff, const(BigDigit)[] data)
             carry = (bigdigit >>> shift) & 0b11;
         }
         shift -= BigDigitBits;
-        assert(shift >= -2 && shift <= 0);
+        assert(shift >= -2 && shift <= 0, "shift must in [-2,0]");
     }
 
     if (shift < 0)
     {
         // Last word had bits that haven't been output yet.
-        assert(shift > -3);
+        assert(shift > -3, "Shift must be greater than -3");
         output(carry);
     }
 
@@ -1928,7 +1949,8 @@ if (
 in
 {
     static if (hasLength!Range)
-        assert((data.length >= 2) || (data.length == 1 && s.length == 1));
+        assert((data.length >= 2) || (data.length == 1 && s.length == 1),
+            "data has a invalid length");
 }
 do
 {
@@ -2067,8 +2089,9 @@ void mulSimple(BigDigit[] result, const(BigDigit) [] left,
         const(BigDigit)[] right) pure nothrow
 in
 {
-    assert(result.length == left.length + right.length);
-    assert(right.length>1);
+    assert(result.length == left.length + right.length,
+        "Result must be able to store left + right");
+    assert(right.length>1, "right must not be empty");
 }
 do
 {
@@ -2080,8 +2103,8 @@ do
 void squareSimple(BigDigit[] result, const(BigDigit) [] x) pure nothrow
 in
 {
-    assert(result.length == 2*x.length);
-    assert(x.length>1);
+    assert(result.length == 2*x.length, "result must be twice as long as x");
+    assert(x.length>1, "x must not be empty");
 }
 do
 {
@@ -2096,9 +2119,11 @@ uint addSimple(BigDigit[] result, const BigDigit [] left, const BigDigit [] righ
 pure nothrow
 in
 {
-    assert(result.length == left.length);
-    assert(left.length >= right.length);
-    assert(right.length>0);
+    assert(result.length == left.length,
+        "result and left must be of the same length");
+    assert(left.length >= right.length,
+        "left must be longer or of equal length to right");
+    assert(right.length > 0, "right must not be empty");
 }
 do
 {
@@ -2118,9 +2143,11 @@ BigDigit subSimple(BigDigit [] result,const(BigDigit) [] left,
         const(BigDigit) [] right) pure nothrow
 in
 {
-    assert(result.length == left.length);
-    assert(left.length >= right.length);
-    assert(right.length>0);
+    assert(result.length == left.length,
+        "result and left must be of the same length");
+    assert(left.length >= right.length,
+        "left must be longer or of equal length to right");
+    assert(right.length > 0, "right must not be empty");
 }
 do
 {
@@ -2141,7 +2168,8 @@ do
 BigDigit subAssignSimple(BigDigit [] result, const(BigDigit) [] right)
 pure nothrow
 {
-    assert(result.length >= right.length);
+    assert(result.length >= right.length,
+       "result must be longer or of equal length to right");
     uint c = multibyteSub(result[0 .. right.length], result[0 .. right.length], right, 0);
     if (c && result.length > right.length)
         c = multibyteIncrementAssign!('-')(result[right.length .. $], c);
@@ -2153,7 +2181,8 @@ pure nothrow
 BigDigit addAssignSimple(BigDigit [] result, const(BigDigit) [] right)
 pure nothrow
 {
-    assert(result.length >= right.length);
+    assert(result.length >= right.length,
+       "result must be longer or of equal length to right");
     uint c = multibyteAdd(result[0 .. right.length], result[0 .. right.length], right, 0);
     if (c && result.length > right.length)
        c = multibyteIncrementAssign!('+')(result[right.length .. $], c);
@@ -2175,7 +2204,8 @@ BigDigit addOrSubAssignSimple(BigDigit [] result, const(BigDigit) [] right,
 // return true if x<y, considering leading zeros
 bool less(const(BigDigit)[] x, const(BigDigit)[] y) pure nothrow
 {
-    assert(x.length >= y.length);
+    assert(x.length >= y.length,
+       "x must be longer or of equal length to y");
     auto k = x.length-1;
     while (x[k]==0 && k >= y.length)
         --k;
@@ -2190,7 +2220,8 @@ bool less(const(BigDigit)[] x, const(BigDigit)[] y) pure nothrow
 bool inplaceSub(BigDigit[] result, const(BigDigit)[] x, const(BigDigit)[] y)
     pure nothrow
 {
-    assert(result.length == ((x.length >= y.length) ? x.length : y.length));
+    assert(result.length == ((x.length >= y.length) ? x.length : y.length),
+        "result must capable to store the maximum of x and y");
 
     size_t minlen;
     bool negative;
@@ -2247,9 +2278,10 @@ size_t karatsubaRequiredBuffSize(size_t xlen) pure nothrow @safe
 void mulKaratsuba(BigDigit [] result, const(BigDigit) [] x,
         const(BigDigit)[] y, BigDigit [] scratchbuff) pure nothrow
 {
-    assert(x.length >= y.length);
+    assert(x.length >= y.length, "x must be greater or equal to y");
     assert(result.length < uint.max, "Operands too large");
-    assert(result.length == x.length + y.length);
+    assert(result.length == x.length + y.length,
+        "result must be as large as x + y");
     if (x.length <= KARATSUBALIMIT)
     {
         return mulSimple(result, x, y);
@@ -2355,7 +2387,8 @@ void squareKaratsuba(BigDigit [] result, const BigDigit [] x,
     // See mulKaratsuba for implementation comments.
     // Squaring is simpler, since it never gets asymmetric.
     assert(result.length < uint.max, "Operands too large");
-    assert(result.length == 2*x.length);
+    assert(result.length == 2*x.length,
+        "result must be twice the length of x");
     if (x.length <= KARATSUBASQUARELIMIT)
     {
         return squareSimple(result, x);
@@ -2409,11 +2442,12 @@ void squareKaratsuba(BigDigit [] result, const BigDigit [] x,
 void schoolbookDivMod(BigDigit [] quotient, BigDigit [] u, in BigDigit [] v)
     pure nothrow
 {
-    assert(quotient.length == u.length - v.length);
-    assert(v.length > 1);
-    assert(u.length >= v.length);
-    assert((v[$-1]&0x8000_0000)!=0);
-    assert(u[$-1] < v[$-1]);
+    assert(quotient.length == u.length - v.length,
+        "quotient has wrong length");
+    assert(v.length > 1, "v must not be empty");
+    assert(u.length >= v.length, "u must be larger or equal to v");
+    assert((v[$ - 1] & 0x8000_0000) != 0, "Invalid value at v[$ - 1]");
+    assert(u[$ - 1] < v[$ - 1], "u[$ - 1] must be less than v[$ - 1]");
     // BUG: This code only works if BigDigit is uint.
     uint vhi = v[$-1];
     uint vlo = v[$-2];
@@ -2431,7 +2465,7 @@ void schoolbookDivMod(BigDigit [] quotient, BigDigit [] u, in BigDigit [] v)
         else
         {
             uint ulo = u[j + v.length - 2];
-            version(D_InlineAsm_X86)
+            version (D_InlineAsm_X86)
             {
                 // Note: On DMD, this is only ~10% faster than the non-asm code.
                 uint *p = &u[j + v.length - 1];
@@ -2457,7 +2491,7 @@ div3by2done:    ;
                 }
             }
             else
-            { // version(InlineAsm)
+            { // version (InlineAsm)
                 ulong uu = (cast(ulong)(u[j + v.length]) << 32) | u[j + v.length - 1];
                 immutable bigqhat = uu / vhi;
                 ulong rhat =  uu - bigqhat * vhi;
@@ -2470,7 +2504,7 @@ again:
                     if (!(rhat & 0xFFFF_FFFF_0000_0000L))
                         goto again;
                 }
-            } // version(InlineAsm)
+            } // version (InlineAsm)
         }
         // Multiply and subtract.
         uint carry = multibyteMulAdd!('-')(u[j .. j + v.length], v, qhat, 0);
@@ -2534,7 +2568,8 @@ private:
 size_t highestDifferentDigit(const BigDigit [] left, const BigDigit [] right)
 pure nothrow @nogc @safe
 {
-    assert(left.length == right.length);
+    assert(left.length == right.length,
+        "left have a length equal to that of right");
     for (ptrdiff_t i = left.length - 1; i>0; --i)
     {
         if (left[i] != right[i])
@@ -2550,7 +2585,7 @@ int firstNonZeroDigit(const BigDigit [] x) pure nothrow @nogc @safe
     while (x[k]==0)
     {
         ++k;
-        assert(k<x.length);
+        assert(k < x.length, "k must be less than x.length");
     }
     return k;
 }
@@ -2585,20 +2620,24 @@ void recursiveDivMod(BigDigit[] quotient, BigDigit[] u, const(BigDigit)[] v,
 in
 {
     // v must be normalized
-    assert(v.length > 1);
-    assert((v[$ - 1] & 0x8000_0000) != 0);
-    assert(!(u[$ - 1] & 0x8000_0000));
-    assert(quotient.length == u.length - v.length);
+    assert(v.length > 1, "v must not be empty");
+    assert((v[$ - 1] & 0x8000_0000) != 0, "Invalid value at v[$ - 1]");
+    assert(!(u[$ - 1] & 0x8000_0000), "Invalid value at u[$ - 1]");
+    assert(quotient.length == u.length - v.length,
+        "quotient must be of equal length of u - v");
     if (mayOverflow)
     {
-        assert(u[$-1] == 0);
-        assert(u[$-2] & 0x8000_0000);
+        assert(u[$-1] == 0, "Invalid value at u[$ - 1]");
+        assert(u[$-2] & 0x8000_0000, "Invalid value at u[$ - 2]");
     }
 
     // Must be symmetric. Use block schoolbook division if not.
-    assert((mayOverflow ? u.length-1 : u.length) <= 2 * v.length);
-    assert((mayOverflow ? u.length-1 : u.length) >= v.length);
-    assert(scratch.length >= quotient.length + (mayOverflow ? 0 : 1));
+    assert((mayOverflow ? u.length-1 : u.length) <= 2 * v.length,
+        "Invalid length of u");
+    assert((mayOverflow ? u.length-1 : u.length) >= v.length,
+        "Invalid length of u");
+    assert(scratch.length >= quotient.length + (mayOverflow ? 0 : 1),
+        "Invalid quotient length");
 }
 do
 {
@@ -2673,7 +2712,7 @@ void adjustRemainder(BigDigit[] quot, BigDigit[] rem, const(BigDigit)[] v,
         ptrdiff_t k,
         BigDigit[] scratch, bool mayOverflow = false) pure nothrow
 {
-    assert(rem.length == v.length);
+    assert(rem.length == v.length, "rem must be as long as v");
     mulInternal(scratch, quot, v[0 .. k]);
     uint carry = 0;
     if (mayOverflow)
@@ -2692,11 +2731,12 @@ void blockDivMod(BigDigit [] quotient, BigDigit [] u, in BigDigit [] v)
 pure nothrow
 {
     import core.memory : GC;
-    assert(quotient.length == u.length - v.length);
-    assert(v.length > 1);
-    assert(u.length >= v.length);
-    assert((v[$-1] & 0x8000_0000)!=0);
-    assert((u[$-1] & 0x8000_0000)==0);
+    assert(quotient.length == u.length - v.length,
+        "quotient must be of equal length of u - v");
+    assert(v.length > 1, "v must not be empty");
+    assert(u.length >= v.length, "u must be longer or of equal length as v");
+    assert((v[$-1] & 0x8000_0000)!=0, "Invalid value at v[$ - 1]");
+    assert((u[$-1] & 0x8000_0000)==0, "Invalid value at u[$ - 1]");
     BigDigit [] scratch = new BigDigit[v.length + 1];
 
     // Perform block schoolbook division, with 'v.length' blocks.
@@ -2714,7 +2754,7 @@ pure nothrow
             u[m - v.length .. m + v.length + (mayOverflow? 1: 0)], v, scratch, mayOverflow);
         if (mayOverflow)
         {
-            assert(quotient[m] == 0);
+            assert(quotient[m] == 0, "quotient must not be 0");
             quotient[m] = saveq;
         }
         m -= v.length;

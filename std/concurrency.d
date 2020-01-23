@@ -72,13 +72,38 @@ import std.traits;
 
 private
 {
-    template hasLocalAliasing(T...)
+    bool hasLocalAliasing(Types...)()
     {
-        static if (!T.length)
-            enum hasLocalAliasing = false;
-        else
-            enum hasLocalAliasing = (std.traits.hasUnsharedAliasing!(T[0]) && !is(T[0] == Tid)) ||
-                                     std.concurrency.hasLocalAliasing!(T[1 .. $]);
+        import std.typecons : Rebindable;
+
+        // Works around "statement is not reachable"
+        bool doesIt = false;
+        static foreach (T; Types)
+        {
+            static if (is(T == Tid))
+            { /* Allowed */ }
+            else static if (is(T : Rebindable!R, R))
+                doesIt |= hasLocalAliasing!R;
+            else static if (is(T == struct))
+                doesIt |= hasLocalAliasing!(typeof(T.tupleof));
+            else
+                doesIt |= std.traits.hasUnsharedAliasing!(T);
+        }
+        return doesIt;
+    }
+
+    @safe unittest
+    {
+        static struct Container { Tid t; }
+        static assert(!hasLocalAliasing!(Tid, Container, int));
+    }
+
+    @safe unittest
+    {
+        /* Issue 20097 */
+        import std.datetime.systime : SysTime;
+        static struct Container { SysTime time; }
+        static assert(!hasLocalAliasing!(SysTime, Container));
     }
 
     enum MsgType
@@ -159,9 +184,12 @@ private
 
     void checkops(T...)(T ops)
     {
+        import std.format : format;
+
         foreach (i, t1; T)
         {
-            static assert(isFunctionPointer!t1 || isDelegate!t1);
+            static assert(isFunctionPointer!t1 || isDelegate!t1,
+                    format!"T %d is not a function pointer or delegates"(i));
             alias a1 = Parameters!(t1);
             alias r1 = ReturnType!(t1);
 
@@ -173,7 +201,6 @@ private
 
                 foreach (t2; T[i + 1 .. $])
                 {
-                    static assert(isFunctionPointer!t2 || isDelegate!t2);
                     alias a2 = Parameters!(t2);
 
                     static assert(!is(a1 == a2),
@@ -710,7 +737,7 @@ do
 }
 
 // Make sure receive() works with free functions as well.
-version(unittest)
+version (unittest)
 {
     private void receiveFunction(int x) {}
 }
@@ -967,18 +994,17 @@ private @property Mutex registryLock()
     return impl;
 }
 
-private void unregisterMe()
+private void unregisterMe(ref ThreadInfo me)
 {
-    auto me = thisInfo.ident;
-    if (thisInfo.ident != Tid.init)
+    if (me.ident != Tid.init)
     {
         synchronized (registryLock)
         {
-            if (auto allNames = me in namesByTid)
+            if (auto allNames = me.ident in namesByTid)
             {
                 foreach (name; *allNames)
                     tidByName.remove(name);
-                namesByTid.remove(me);
+                namesByTid.remove(me.ident);
             }
         }
     }
@@ -1101,7 +1127,18 @@ struct ThreadInfo
             _send(MsgType.linkDead, tid, ident);
         if (owner != Tid.init)
             _send(MsgType.linkDead, owner, ident);
-        unregisterMe(); // clean up registry entries
+        unregisterMe(this); // clean up registry entries
+    }
+
+    // issue 20160
+    @system unittest
+    {
+        register("main_thread", thisTid());
+
+        ThreadInfo t;
+        t.cleanup();
+
+        assert(locate("main_thread") == thisTid());
     }
 }
 
@@ -1321,13 +1358,45 @@ class FiberScheduler : Scheduler
 
     /**
      * Returns a Condition analog that yields when wait or notify is called.
+     *
+     * Bug:
+     * For the default implementation, `notifyAll`will behave like `notify`.
+     *
+     * Params:
+     *   m = A `Mutex` to use for locking if the condition needs to be waited on
+     *       or notified from multiple `Thread`s.
+     *       If `null`, no `Mutex` will be used and it is assumed that the
+     *       `Condition` is only waited on/notified from one `Thread`.
      */
     Condition newCondition(Mutex m) nothrow
     {
         return new FiberCondition(m);
     }
 
-private:
+protected:
+    /**
+     * Creates a new Fiber which calls the given delegate.
+     *
+     * Params:
+     *   op = The delegate the fiber should call
+     */
+    void create(void delegate() op) nothrow
+    {
+        void wrap()
+        {
+            scope (exit)
+            {
+                thisInfo.cleanup();
+            }
+            op();
+        }
+
+        m_fibers ~= new InfoFiber(&wrap);
+    }
+
+    /**
+     * Fiber which embeds a ThreadInfo
+     */
     static class InfoFiber : Fiber
     {
         ThreadInfo info;
@@ -1336,8 +1405,14 @@ private:
         {
             super(op);
         }
+
+        this(void delegate() op, size_t sz) nothrow
+        {
+            super(op, sz);
+        }
     }
 
+private:
     class FiberCondition : Condition
     {
         this(Mutex m) nothrow
@@ -1364,7 +1439,7 @@ private:
                  !notified && !period.isNegative;
                  period = limit - MonoTime.currTime)
             {
-                yield();
+                this.outer.yield();
             }
             return notified;
         }
@@ -1384,9 +1459,11 @@ private:
     private:
         void switchContext() nothrow
         {
-            mutex_nothrow.unlock_nothrow();
-            scope (exit) mutex_nothrow.lock_nothrow();
-            yield();
+            if (mutex_nothrow) mutex_nothrow.unlock_nothrow();
+            scope (exit)
+                if (mutex_nothrow)
+                    mutex_nothrow.lock_nothrow();
+            this.outer.yield();
         }
 
         private bool notified;
@@ -1414,20 +1491,6 @@ private:
                 m_pos = 0;
             }
         }
-    }
-
-    void create(void delegate() op) nothrow
-    {
-        void wrap()
-        {
-            scope (exit)
-            {
-                thisInfo.cleanup();
-            }
-            op();
-        }
-
-        m_fibers ~= new InfoFiber(&wrap);
     }
 
 private:
@@ -1951,7 +2014,7 @@ private
         {
             import std.meta : AliasSeq;
 
-            static assert(T.length);
+            static assert(T.length, "T must not be empty");
 
             static if (isImplicitlyConvertible!(T[0], Duration))
             {
@@ -1992,7 +2055,8 @@ private
 
             bool onLinkDeadMsg(ref Message msg)
             {
-                assert(msg.convertsTo!(Tid));
+                assert(msg.convertsTo!(Tid),
+                        "Message could be converted to Tid");
                 auto tid = msg.get!(Tid);
 
                 if (bool* pDepends = tid in thisInfo.links)
@@ -2169,7 +2233,8 @@ private
         {
             static void onLinkDeadMsg(ref Message msg)
             {
-                assert(msg.convertsTo!(Tid));
+                assert(msg.convertsTo!(Tid),
+                        "Message could be converted to Tid");
                 auto tid = msg.get!(Tid);
 
                 thisInfo.links.remove(tid);
@@ -2314,7 +2379,7 @@ private
         {
             import std.exception : enforce;
 
-            assert(m_count);
+            assert(m_count, "Can not remove from empty Range");
             Node* n = r.m_prev;
             enforce(n && n.next, "attempting to remove invalid list node");
 

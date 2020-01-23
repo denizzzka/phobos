@@ -61,8 +61,8 @@ Distributed under the Boost Software License, Version 1.0.
 */
 module std.functional;
 
-import std.meta; // AliasSeq, Reverse
-import std.traits; // isCallable, Parameters
+import std.meta : AliasSeq, Reverse;
+import std.traits : isCallable, Parameters;
 
 
 private template needOpCallAlias(alias fun)
@@ -617,48 +617,6 @@ template reverseArgs(alias pred)
     assert(b() == _b());
 }
 
-// @@@DEPRECATED_2.089@@@
-/**
-Binary predicate that reverses the order of arguments, e.g., given
-$(D pred(a, b)), returns $(D pred(b, a)).
-
-$(RED DEPRECATED: Use $(LREF reverseArgs))
-
-Params:
-    pred = A callable
-Returns:
-    A function which calls `pred` after reversing the given parameters
-*/
-deprecated("Use `reverseArgs`. `binaryReverseArgs` will be removed in 2.089.")
-template binaryReverseArgs(alias pred)
-{
-    auto binaryReverseArgs(ElementType1, ElementType2)
-            (auto ref ElementType1 a, auto ref ElementType2 b)
-    {
-        return pred(b, a);
-    }
-}
-
-///
-deprecated
-@safe unittest
-{
-    alias gt = binaryReverseArgs!(binaryFun!("a < b"));
-    assert(gt(2, 1) && !gt(1, 1));
-}
-
-///
-deprecated
-@safe unittest
-{
-    int x = 42;
-    bool xyz(int a, int b) { return a * x < b / x; }
-    auto foo = &xyz;
-    foo(4, 5);
-    alias zyx = binaryReverseArgs!(foo);
-    assert(zyx(5, 4) == foo(4, 5));
-}
-
 /**
 Negates predicate `pred`.
 
@@ -716,15 +674,11 @@ Returns:
  */
 template partial(alias fun, alias arg)
 {
-    static if (is(typeof(fun) == delegate) || is(typeof(fun) == function))
-    {
-        import std.traits : ReturnType;
-        ReturnType!fun partial(Parameters!fun[1..$] args2)
-        {
-            return fun(arg, args2);
-        }
-    }
-    else
+    import std.traits : isCallable;
+    // Check whether fun is a user defined type which implements opCall or a template.
+    // As opCall itself can be templated, std.traits.isCallable does not work here.
+    enum isSomeFunctor = (is(typeof(fun) == struct) || is(typeof(fun) == class)) && __traits(hasMember, fun, "opCall");
+    static if (isSomeFunctor || __traits(isTemplate, fun))
     {
         auto partial(Ts...)(Ts args2)
         {
@@ -744,6 +698,36 @@ template partial(alias fun, alias arg)
                     return msg;
                 }
                 static assert(0, errormsg());
+            }
+        }
+    }
+    else static if (!isCallable!fun)
+    {
+        static assert(false, "Cannot apply partial to a non-callable '" ~ fun.stringof ~ "'.");
+    }
+    else // Assume fun is callable and uniquely defined.
+    {
+        static if (Parameters!fun.length == 0)
+        {
+            static assert(0, "Cannot partially apply '" ~ fun.stringof ~ "'." ~
+                "'" ~ fun.stringof ~ "' has 0 arguments.");
+        }
+        else static if (!is(typeof(arg) : Parameters!fun[0]))
+        {
+            string errorMsg()
+            {
+                string msg = "Argument mismatch for '" ~ fun.stringof ~ "': expected " ~
+                    Parameters!fun[0].stringof ~ ", but got " ~ typeof(arg).stringof ~ ".";
+                return msg;
+            }
+            static assert(0, errorMsg());
+        }
+        else
+        {
+            import std.traits : ReturnType;
+            ReturnType!fun partial(Parameters!fun[1..$] args2)
+            {
+                return fun(arg, args2);
             }
         }
     }
@@ -833,6 +817,11 @@ template partial(alias fun, alias arg)
     assert(partial!(tcallable, 5)(6) == 11);
     static assert(!is(typeof(partial!(tcallable, "5")(6))));
 
+    static struct NonCallable{}
+    static assert(!__traits(compiles, partial!(NonCallable, 5)), "Partial should not work on non-callable structs.");
+    static assert(!__traits(compiles, partial!(NonCallable.init, 5)),
+        "Partial should not work on instances of non-callable structs.");
+
     static A funOneArg(A)(A a) { return a; }
     alias funOneArg1 = partial!(funOneArg, 1);
     assert(funOneArg1() == 1);
@@ -844,6 +833,28 @@ template partial(alias fun, alias arg)
 
     auto dg2 = &funOneArg1!();
     assert(dg2() == 1);
+}
+
+// Fix issue 15732
+@safe unittest
+{
+    // Test whether it works with functions.
+    auto partialFunction(){
+        auto fullFunction = (float a, float b, float c) => a + b / c;
+        alias apply1 = partial!(fullFunction, 1);
+        return &apply1;
+    }
+    auto result = partialFunction()(2, 4);
+    assert(result == 1.5f);
+
+    // And with delegates.
+    auto partialDelegate(float c){
+        auto fullDelegate = (float a, float b) => a + b / c;
+        alias apply1 = partial!(fullDelegate, 1);
+        return &apply1;
+    }
+    auto result2 = partialDelegate(4)(2);
+    assert(result2 == 1.5f);
 }
 
 /**
@@ -950,7 +961,7 @@ if (F.length > 1)
    Params:
         fun = the call-able(s) or `string`(s) to compose into one function
     Returns:
-        A new function `f(x)` that in turn returns $(D fun[0](fun[1](...(x)))...).
+        A new function `f(x)` that in turn returns `fun[0](fun[1](...(x)))...`.
 
    See_Also: $(LREF pipe)
 */
@@ -1001,7 +1012,7 @@ template compose(fun...)
    Params:
         fun = the call-able(s) or `string`(s) to compose into one function
     Returns:
-        A new function `f(x)` that in turn returns $(D fun[0](fun[1](...(x)))...).
+        A new function `f(x)` that in turn returns `fun[$-1](...fun[1](fun[0](x)))...`.
 
    Example:
 
@@ -1076,12 +1087,15 @@ template memoize(alias fun)
     {
         alias Args = Parameters!fun;
         import std.typecons : Tuple;
+        import std.traits : Unqual;
 
-        static ReturnType!fun[Tuple!Args] memo;
+        static Unqual!(ReturnType!fun)[Tuple!Args] memo;
         auto t = Tuple!Args(args);
         if (auto p = t in memo)
             return *p;
-        return memo[t] = fun(args);
+        auto r = fun(args);
+        memo[t] = r;
+        return r;
     }
 }
 
@@ -1092,9 +1106,10 @@ template memoize(alias fun, uint maxSize)
     // alias Args = Parameters!fun; // Bugzilla 13580
     ReturnType!fun memoize(Parameters!fun args)
     {
-        import std.traits : hasIndirections;
+        import std.meta : staticMap;
+        import std.traits : hasIndirections, Unqual;
         import std.typecons : tuple;
-        static struct Value { Parameters!fun args; ReturnType!fun res; }
+        static struct Value { staticMap!(Unqual, Parameters!fun) args; Unqual!(ReturnType!fun) res; }
         static Value[] memo;
         static size_t[] initialized;
 
@@ -1149,9 +1164,10 @@ template memoize(alias fun, uint maxSize)
  * To _memoize a recursive function, simply insert the memoized call in lieu of the plain recursive call.
  * For example, to transform the exponential-time Fibonacci implementation into a linear-time computation:
  */
-@safe unittest
+@safe nothrow
+unittest
 {
-    ulong fib(ulong n) @safe
+    ulong fib(ulong n) @safe nothrow
     {
         return n < 2 ? n : memoize!fib(n - 2) + memoize!fib(n - 1);
     }
@@ -1289,6 +1305,17 @@ template memoize(alias fun, uint maxSize)
     assert(executed == 1);
 }
 
+// 20439 memoize should work with void opAssign
+@safe unittest
+{
+    static struct S
+    {
+        void opAssign(S) {}
+    }
+
+    assert(memoize!(() => S()) == S());
+}
+
 // 16079: memoize should work with classes
 @system unittest // not @safe with -dip1000 due to memoize
 {
@@ -1321,6 +1348,33 @@ template memoize(alias fun, uint maxSize)
     assert(firstClass(new Bar(3)).k == 3);
     assert(firstClass(new Bar(3)).k == 3);
     assert(executed == 1);
+}
+
+// https://issues.dlang.org/show_bug.cgi?id=20302
+@system unittest
+{
+    version (none) // TODO change `none` to `all` and fix remaining limitations
+        struct S { const int len; }
+    else
+        struct S { int len; }
+
+    static       string  fun000(      string str,       S s) { return str[0 .. s.len] ~ "123"; }
+    static       string  fun001(      string str, const S s) { return str[0 .. s.len] ~ "123"; }
+    static       string  fun010(const string str,       S s) { return str[0 .. s.len] ~ "123"; }
+    static       string  fun011(const string str, const S s) { return str[0 .. s.len] ~ "123"; }
+    static const(string) fun100(      string str,       S s) { return str[0 .. s.len] ~ "123"; }
+    static const(string) fun101(      string str, const S s) { return str[0 .. s.len] ~ "123"; }
+    static const(string) fun110(const string str,       S s) { return str[0 .. s.len] ~ "123"; }
+    static const(string) fun111(const string str, const S s) { return str[0 .. s.len] ~ "123"; }
+
+    static foreach (fun; AliasSeq!(fun000, fun001, fun010, fun011, fun100, fun101, fun110, fun111))
+    {{
+        alias mfun = memoize!fun;
+        assert(mfun("abcdefgh", S(3)) == "abc123");
+
+        alias mfun2 = memoize!(fun, 42);
+        assert(mfun2("asd", S(3)) == "asd123");
+    }}
 }
 
 private struct DelegateFaker(F)
@@ -1560,28 +1614,8 @@ Returns:
 */
 template forward(args...)
 {
-    static if (args.length)
-    {
-        import std.algorithm.mutation : move;
-
-        alias arg = args[0];
-        // by ref || lazy || const/immutable
-        static if (__traits(isRef,  arg) ||
-                   __traits(isOut,  arg) ||
-                   __traits(isLazy, arg) ||
-                   !is(typeof(move(arg))))
-            alias fwd = arg;
-        // (r)value
-        else
-            @property auto fwd(){ return move(arg); }
-
-        static if (args.length == 1)
-            alias forward = fwd;
-        else
-            alias forward = AliasSeq!(fwd, forward!(args[1..$]));
-    }
-    else
-        alias forward = AliasSeq!();
+    import core.lifetime : fun = forward;
+    alias forward = fun!args;
 }
 
 ///
@@ -1623,49 +1657,6 @@ template forward(args...)
     assert(s == "Hello");
     baz(s, 2);
     assert(s == "HelloHello");
-}
-
-@safe unittest
-{
-    auto foo(TL...)(auto ref TL args)
-    {
-        string result = "";
-        foreach (i, _; args)
-        {
-            //pragma(msg, "[",i,"] ", __traits(isRef, args[i]) ? "L" : "R");
-            result ~= __traits(isRef, args[i]) ? "L" : "R";
-        }
-        return result;
-    }
-
-    string bar(TL...)(auto ref TL args)
-    {
-        return foo(forward!args);
-    }
-    string baz(TL...)(auto ref TL args)
-    {
-        int x;
-        return foo(forward!args[3], forward!args[2], 1, forward!args[1], forward!args[0], x);
-    }
-
-    struct S {}
-    S makeS(){ return S(); }
-    int n;
-    string s;
-    assert(bar(S(), makeS(), n, s) == "RRLL");
-    assert(baz(S(), makeS(), n, s) == "LLRRRL");
-}
-
-@safe unittest
-{
-    ref int foo(return ref int a) { return a; }
-    ref int bar(Args)(auto ref Args args)
-    {
-        return foo(forward!args);
-    }
-    static assert(!__traits(compiles, { auto x1 = bar(3); })); // case of NG
-    int value = 3;
-    auto x2 = bar(value); // case of OK
 }
 
 ///
@@ -1733,50 +1724,4 @@ template forward(args...)
     Z z4 = constX();
     // const rvalue, copy
     assert(z4.x_.i == 1);
-}
-
-// lazy -> lazy
-@safe unittest
-{
-    int foo1(lazy int i) { return i; }
-    int foo2(A)(auto ref A i) { return foo1(forward!i); }
-    int foo3(lazy int i) { return foo2(i); }
-
-    int numCalls = 0;
-    assert(foo3({ ++numCalls; return 42; }()) == 42);
-    assert(numCalls == 1);
-}
-
-// lazy -> non-lazy
-@safe unittest
-{
-    int foo1(int a, int b) { return a + b; }
-    int foo2(A...)(auto ref A args) { return foo1(forward!args); }
-    int foo3(int a, lazy int b) { return foo2(a, b); }
-
-    int numCalls;
-    assert(foo3(11, { ++numCalls; return 31; }()) == 42);
-    assert(numCalls == 1);
-}
-
-// non-lazy -> lazy
-@safe unittest
-{
-    int foo1(int a, lazy int b) { return a + b; }
-    int foo2(A...)(auto ref A args) { return foo1(forward!args); }
-    int foo3(int a, int b) { return foo2(a, b); }
-
-    assert(foo3(11, 31) == 42);
-}
-
-// out
-@safe unittest
-{
-    void foo1(int a, out int b) { b = a; }
-    void foo2(A...)(auto ref A args) { foo1(forward!args); }
-    void foo3(int a, out int b) { foo2(a, b); }
-
-    int b;
-    foo3(42, b);
-    assert(b == 42);
 }
