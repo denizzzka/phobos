@@ -6363,30 +6363,6 @@ version (IeeeFlagsSupport) @safe unittest
     }}
 }
 
-<<<<<<< HEAD
-=======
-version (X86_Any)
-{
-    version = IeeeFlagsSupport;
-}
-else version (PPC_Any)
-{
-    version = IeeeFlagsSupport;
-}
-else version (RISCV_Any)
-{
-    version = IeeeFlagsSupport;
-}
-else version (MIPS_Any)
-{
-    version = IeeeFlagsSupport;
-}
-else version (ARM_Any)
-{
-    version = IeeeFlagsSupport;
-}
-
->>>>>>> ldc
 /// Set all of the floating-point status flags to false.
 void resetIeeeFlags() @trusted nothrow @nogc
 {
@@ -7109,11 +7085,7 @@ version (LDC)
     // Win64: debug and release fail
 }
 else
-<<<<<<< HEAD
-@safe unittest // rounding
-=======
-version (InlineAsm_X86_Any) @safe unittest // rounding
->>>>>>> ldc
+version (IeeeFlagsSupport) @safe unittest // rounding
 {
     import std.meta : AliasSeq;
 
