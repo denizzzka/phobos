@@ -6317,11 +6317,7 @@ version (LDC)
     }
 }
 else
-<<<<<<< HEAD
-unittest
-=======
-version (InlineAsm_X86_Any) @safe unittest
->>>>>>> ldc
+version (IeeeFlagsSupport) @safe unittest
 {
     import std.meta : AliasSeq;
 
