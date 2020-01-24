@@ -186,7 +186,10 @@ else version (X86)
     private alias haveSSE = core.cpuid.sse;
 }
 
-version (D_SoftFloat) {}
+version (D_SoftFloat) {
+    // Some soft float architectures may support IEEE floating flags.
+    // Feel free to add exclusion for them.
+}
 else version (X86_Any)  version = IeeeFlagsSupport;
 else version (PPC_Any)  version = IeeeFlagsSupport;
 else version (MIPS_Any) version = IeeeFlagsSupport;
