@@ -177,6 +177,8 @@ version (Windows)
     immutable newline = "\r\n";
 else version (Posix)
     immutable newline = "\n";
+else version (DruntimeAbstractRt)
+    immutable newline = "\n";
 else
     static assert(0, "Unsupported OS");
 
