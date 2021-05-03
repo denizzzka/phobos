@@ -1,26 +1,5 @@
 project('phobos', 'd')
 
-include_directories = [
-    'etc',
-    'etc/c',
-    'std',
-    'std/algorithm',
-    'std/container',
-    'std/datetime',
-    'std/digest',
-    'std/experimental',
-    'std/experimental/allocator',
-    'std/experimental/allocator/building_blocks',
-    'std/experimental/logger',
-    'std/format',
-    'std/math',
-    'std/net',
-    'std/range',
-    'std/regex',
-    'std/uni',
-    'std/windows',
-]
-
 src = [
     'etc/c/curl.d',
     'etc/c/odbc/sql.d',
@@ -191,5 +170,5 @@ src = [
 
 phobos_dep = declare_dependency(
     sources: src,
-    include_directories: include_directories,
+    include_directories: '.',
 )
