@@ -1,6 +1,6 @@
 project('phobos', 'd')
 
-src = [
+src = files(
     'etc/c/curl.d',
     'etc/c/odbc/sql.d',
     'etc/c/odbc/sqlext.d',
@@ -166,7 +166,7 @@ src = [
     'std/xml.d',
     'std/zip.d',
     'std/zlib.d',
-]
+)
 
 include_directories = include_directories('.')
 
