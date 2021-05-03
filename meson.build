@@ -168,7 +168,9 @@ src = [
     'std/zlib.d',
 ]
 
+include_directories = include_directories('.')
+
 phobos_dep = declare_dependency(
     sources: src,
-    include_directories: '.',
+    include_directories: include_directories,
 )
