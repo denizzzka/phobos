@@ -95,6 +95,7 @@ $(TR $(TD Other) $(TD
 */
 module std.path;
 
+version (DruntimeAbstractRt) {} else:
 
 import std.file : getcwd;
 static import std.meta;

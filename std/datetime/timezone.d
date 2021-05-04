@@ -28,6 +28,8 @@ $(TR $(TD Utilities) $(TD
 +/
 module std.datetime.timezone;
 
+version (DruntimeAbstractRt) {} else:
+
 import core.time : abs, convert, dur, Duration, hours, minutes;
 import std.datetime.systime : Clock, stdTimeToUnixTime, SysTime;
 import std.range.primitives : back, empty, front, isOutputRange, popFront;

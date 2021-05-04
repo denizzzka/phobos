@@ -32,6 +32,8 @@ $(TR $(TD Conversion) $(TD
 +/
 module std.datetime.systime;
 
+version (DruntimeAbstractRt) {} else:
+
 version (OSX)
     version = Darwin;
 else version (iOS)

@@ -35,6 +35,8 @@
 
 module etc.c.curl;
 
+version (DruntimeAbstractRt) {} else:
+
 import core.stdc.config;
 import core.stdc.time;
 import std.socket;
