@@ -1860,6 +1860,7 @@ private:
     immutable Duration _utcOffset;
 }
 
+import std.file; // isDir
 
 /++
     Represents a time zone from a TZ Database time zone file. Files from the TZ
@@ -1888,6 +1889,7 @@ private:
         $(HTTP en.wikipedia.org/wiki/List_of_tz_database_time_zones, List of Time
           Zones)
   +/
+static if (__traits(compiles, isDir))
 final class PosixTimeZone : TimeZone
 {
     import std.algorithm.searching : countUntil, canFind, startsWith;

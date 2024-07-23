@@ -112,7 +112,12 @@ else version (Posix)
         core.sys.posix.sys.time, core.sys.posix.unistd, core.sys.posix.utime;
 }
 else
-    static assert(false, "Module " ~ .stringof ~ " not implemented for this OS.");
+{
+    version = FilesystemUnsupported;
+}
+
+version (FilesystemUnsupported) {}
+else:
 
 // Character type used for operating system filesystem APIs
 version (Windows)

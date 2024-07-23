@@ -95,6 +95,12 @@ $(TR $(TD Other) $(TD
 */
 module std.path;
 
+import std.file;
+
+static if(__traits(compiles, getcwd))
+    version = StdPathImplemented;
+
+version (StdPathImplemented):
 
 import std.file : getcwd;
 static import std.meta;

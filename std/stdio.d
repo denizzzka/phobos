@@ -187,6 +187,7 @@ else version (Solaris)
 }
 else
 {
+    version (GENERIC_IO) {} else
     static assert(0, "unsupported operating system");
 }
 
@@ -390,7 +391,10 @@ else version (GENERIC_IO)
     }
     else
     {
-        static assert(0, "don't know how to lock files on GENERIC_IO");
+        import core.stdc.stdio: flockfile, funlockfile;
+
+        private alias _FLOCK = flockfile;
+        private alias _FUNLOCK = funlockfile;
     }
 }
 else

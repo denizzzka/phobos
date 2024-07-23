@@ -89,6 +89,8 @@ $(LREF environment), $(LREF thisProcessID) and $(LREF thisThreadID).
 */
 module std.process;
 
+version(none):
+
 import core.thread : ThreadID;
 
 version (Posix)
