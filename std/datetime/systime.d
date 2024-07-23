@@ -524,7 +524,9 @@ See_Also:
 struct SysTime
 {
     import core.stdc.time : tm;
-    import core.stdc.time; // timeval if available;
+    version (Posix) import core.sys.posix.sys.time : timeval;
+    else
+        import core.stdc.time; // timeval if available;
     import std.typecons : Rebindable;
 
 public:
