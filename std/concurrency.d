@@ -1326,7 +1326,7 @@ interface Scheduler
      * as when each logical thread is backed by a dedicated kernel thread,
      * this routine may be a no-op.
      */
-    void yield() nothrow;
+    void yield() nothrow @nogc;
 
     /**
      * Returns an appropriate `ThreadInfo` instance.
@@ -1567,7 +1567,7 @@ private:
         }
 
     private:
-        void switchContext() nothrow
+        void switchContext() nothrow @nogc
         {
             if (mutex_nothrow) mutex_nothrow.unlock_nothrow();
             scope (exit)
