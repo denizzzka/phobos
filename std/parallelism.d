@@ -1046,7 +1046,7 @@ uint totalCPUsImpl() @nogc nothrow @trusted
     }
     else
     {
-        static assert(0, "Don't know how to get N CPUs on this OS.");
+        assert(false, "Don't know how to get N CPUs on this OS.");
     }
 }
 
