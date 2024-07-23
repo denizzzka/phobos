@@ -95,9 +95,12 @@ $(TR $(TD Other) $(TD
 */
 module std.path;
 
-import std.file;
+//~ import std.file;
 
-static if(__traits(compiles, getcwd))
+//~ static if(__traits(compiles, getcwd)) // FIXME: https://issues.dlang.org/show_bug.cgi?id=24666
+version (Posix)
+    version = StdPathImplemented;
+else version (Windows)
     version = StdPathImplemented;
 
 version (StdPathImplemented):
