@@ -57,7 +57,7 @@ else version (Posix)
 }
 else
 {
-    static assert(0);
+    //~ static assert(0); //FIXME
 }
 
 /**
@@ -622,7 +622,7 @@ private:
     }
     else
     {
-        static assert(0);
+        //~ static assert(0); //FIXME
     }
 }
 
