@@ -272,7 +272,15 @@ version (LDC_AddressSanitizer)
         auto result = _aligned_malloc(bytes, a);
         return result ? result[0 .. bytes] : null;
     }
-    else static assert(0);
+    else
+    @trusted @nogc nothrow
+    void[] alignedAllocate(size_t bytes, uint a) shared
+    {
+        import core.stdc.stdlib: aligned_alloc;
+
+        auto result = aligned_alloc(bytes, a);
+        return result ? result[0 .. bytes] : null;
+    }
 
     /**
     Calls `free(b.ptr)` on Posix and
@@ -294,7 +302,14 @@ version (LDC_AddressSanitizer)
         _aligned_free(b.ptr);
         return true;
     }
-    else static assert(0);
+    else
+    @system @nogc nothrow
+    bool deallocate(void[] b) shared
+    {
+        import core.stdc.stdlib : free;
+        free(b.ptr);
+        return true;
+    }
 
     /**
     Forwards to $(D alignedReallocate(b, newSize, platformAlignment)).
