@@ -99,6 +99,10 @@ else version (Posix)
     import core.sys.posix.signal : timespec;
     import core.sys.posix.sys.types : time_t;
 }
+else
+{
+    import core.stdc.time: time_t;
+}
 
 version (StdUnittest)
 {
