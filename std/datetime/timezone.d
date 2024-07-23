@@ -622,6 +622,10 @@ public:
             catch (Exception e)
                 assert(0, "GetTimeZoneInformation() returned invalid UTF-16.");
         }
+        else
+        {
+            assert(false, "Unimplemented");
+        }
     }
 
     @safe unittest
@@ -707,6 +711,10 @@ public:
             catch (Exception e)
                 assert(0, "GetTimeZoneInformation() returned invalid UTF-16.");
         }
+        else
+        {
+            assert(false, "unimplemented");
+        }
     }
 
     @safe unittest
@@ -778,6 +786,10 @@ public:
 
             return tzInfo.DaylightDate.wMonth != 0;
         }
+        else
+        {
+            assert(false, "unimplemented");
+        }
     }
 
     @safe unittest
@@ -812,6 +824,7 @@ public:
     override bool dstInEffect(long stdTime) @trusted const scope nothrow
     {
         import core.stdc.time : tm;
+        import core.stdc.time; // time_t if available
 
         time_t unixTime = stdTimeToUnixTime(stdTime);
 
@@ -841,6 +854,10 @@ public:
             GetTimeZoneInformation(&tzInfo);
 
             return WindowsTimeZone._dstInEffect(&tzInfo, stdTime);
+        }
+        else
+        {
+            assert(false, "unimplemented");
         }
     }
 
@@ -883,6 +900,10 @@ public:
             GetTimeZoneInformation(&tzInfo);
 
             return WindowsTimeZone._utcToTZ(&tzInfo, stdTime, hasDST);
+        }
+        else
+        {
+            assert(false, "unimplemented");
         }
     }
 
@@ -938,6 +959,10 @@ public:
             GetTimeZoneInformation(&tzInfo);
 
             return WindowsTimeZone._tzToUTC(&tzInfo, adjTime, hasDST);
+        }
+        else
+        {
+            assert(false, "unimplemented");
         }
     }
 
@@ -1860,7 +1885,10 @@ private:
     immutable Duration _utcOffset;
 }
 
-import std.file; // isDir
+version (Posix)
+    version = PosixTimeZoneImplemented;
+version (Windows)
+    version = PosixTimeZoneImplemented;
 
 /++
     Represents a time zone from a TZ Database time zone file. Files from the TZ
@@ -1889,7 +1917,7 @@ import std.file; // isDir
         $(HTTP en.wikipedia.org/wiki/List_of_tz_database_time_zones, List of Time
           Zones)
   +/
-static if (__traits(compiles, isDir))
+version (PosixTimeZoneImplemented)
 final class PosixTimeZone : TimeZone
 {
     import std.algorithm.searching : countUntil, canFind, startsWith;
