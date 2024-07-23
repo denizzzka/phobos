@@ -89,14 +89,12 @@ $(LREF environment), $(LREF thisProcessID) and $(LREF thisThreadID).
 */
 module std.process;
 
-version(none):
-
-import core.thread : ThreadID;
-
 version (Posix)
 {
     import core.sys.posix.sys.wait;
     import core.sys.posix.unistd;
+
+    version = ProcessSupported;
 }
 version (Windows)
 {
@@ -105,7 +103,13 @@ version (Windows)
     import core.sys.windows.winnt;
     import std.utf;
     import std.windows.syserror;
+
+    version = ProcessSupported;
 }
+
+version (ProcessSupported):
+
+import core.thread : ThreadID;
 
 import std.internal.cstring;
 import std.range;
