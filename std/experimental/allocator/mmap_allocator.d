@@ -4,6 +4,13 @@ Source: $(PHOBOSSRC std/experimental/allocator/_mmap_allocator.d)
 */
 module std.experimental.allocator.mmap_allocator;
 
+version (Posix)
+    version = MMapAllocator_Supported;
+version (Windows)
+    version = MMapAllocator_Supported;
+
+version (MMapAllocator_Supported):
+
 /**
 Allocator (currently defined only for Posix and Windows) using
 $(D $(LINK2 https://en.wikipedia.org/wiki/Mmap, mmap))

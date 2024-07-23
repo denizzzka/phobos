@@ -29,6 +29,27 @@
  */
 module std.mmfile;
 
+version (Windows)
+{
+    version = MmFile_Supported;
+
+    import core.sys.windows.winbase;
+    import core.sys.windows.winnt;
+    import std.utf;
+    import std.windows.syserror;
+}
+else version (Posix)
+{
+    version = MmFile_Supported;
+
+    import core.sys.posix.fcntl;
+    import core.sys.posix.sys.mman;
+    import core.sys.posix.sys.stat;
+    import core.sys.posix.unistd;
+}
+
+version (MmFile_Supported):
+
 import core.stdc.errno;
 import core.stdc.stdio;
 import core.stdc.stdlib;
@@ -40,25 +61,6 @@ import std.string;
 import std.internal.cstring;
 
 //debug = MMFILE;
-
-version (Windows)
-{
-    import core.sys.windows.winbase;
-    import core.sys.windows.winnt;
-    import std.utf;
-    import std.windows.syserror;
-}
-else version (Posix)
-{
-    import core.sys.posix.fcntl;
-    import core.sys.posix.sys.mman;
-    import core.sys.posix.sys.stat;
-    import core.sys.posix.unistd;
-}
-else
-{
-    //~ static assert(0); //FIXME
-}
 
 /**
  * MmFile objects control the memory mapped file resource.
@@ -622,7 +624,7 @@ private:
     }
     else
     {
-        //~ static assert(0); //FIXME
+        static assert(0);
     }
 }
 

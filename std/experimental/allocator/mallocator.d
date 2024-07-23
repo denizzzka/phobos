@@ -344,9 +344,7 @@ version (LDC_AddressSanitizer)
         b = p[0 .. s];
         return true;
     }
-
-    /// ditto
-    version (Posix)
+    else
     @system @nogc nothrow
     bool alignedReallocate(ref void[] b, size_t s, uint a) shared
     {

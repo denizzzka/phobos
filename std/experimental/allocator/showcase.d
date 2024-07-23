@@ -51,6 +51,10 @@ alias StackFront(size_t stackSize, Allocator = GCAllocator) =
     a.deallocate(c);
 }
 
+import std.experimental.allocator.mmap_allocator;
+static if(__traits(compiles, MmapAllocator))
+{
+
 /**
 Creates a scalable `AllocatorList` of `Regions`, each having at least
 `bytesPerRegion` bytes. Allocation is very fast. This allocator does not offer
@@ -90,4 +94,6 @@ auto mmapRegionList(size_t bytesPerRegion)
     auto alloc = mmapRegionList(1024 * 1024);
     const b = alloc.allocate(100);
     assert(b.length == 100);
+}
+
 }
