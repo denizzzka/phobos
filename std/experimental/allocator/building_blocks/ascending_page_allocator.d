@@ -34,7 +34,7 @@ private mixin template AscendingPageAllocatorImpl(bool isShared)
         }
         else
         {
-            static assert(0, "Unsupported OS");
+            assert(false, "Unsupported");
         }
 
         static if (!isShared)
@@ -71,7 +71,7 @@ private mixin template AscendingPageAllocatorImpl(bool isShared)
         }
         else
         {
-            static assert(0, "Unsupported OS version");
+            assert(false, "Unsupported");
         }
         data = null;
         offset = null;
@@ -115,7 +115,7 @@ private mixin template AscendingPageAllocatorImpl(bool isShared)
         }
         else
         {
-            static assert(0, "Unsupported OS version");
+            assert(false, "Unsupported");
         }
 
         offset = data;
@@ -157,7 +157,7 @@ private mixin template AscendingPageAllocatorImpl(bool isShared)
         }
         else
         {
-            static assert(0, "Unsupported OS");
+            assert(false, "Unsupported");
         }
     }
 }
