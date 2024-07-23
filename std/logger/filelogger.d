@@ -4,6 +4,13 @@ Source: $(PHOBOSSRC std/logger/filelogger.d)
 */
 module std.logger.filelogger;
 
+version (Posix)
+    version = Files_Supported;
+version (Windows)
+    version = Files_Supported;
+
+version (Files_Supported):
+
 import std.logger.core;
 import std.stdio;
 

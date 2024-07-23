@@ -4,6 +4,11 @@ Source: $(PHOBOSSRC std/logger/core.d)
 */
 module std.logger.core;
 
+version (Posix)
+    version = Files_Supported;
+version (Windows)
+    version = Files_Supported;
+
 import core.atomic : atomicLoad, atomicOp, atomicStore, MemoryOrder;
 import core.sync.mutex : Mutex;
 import std.datetime.date : DateTime;
@@ -1435,6 +1440,7 @@ private shared LogLevel stdLoggerGlobalLogLevel = LogLevel.all;
 /* This method returns the global default Logger.
  * Marked @trusted because of excessive reliance on __gshared data
  */
+version (Files_Supported)
 private @property shared(Logger) defaultSharedLoggerImpl() @trusted
 {
     import core.lifetime : emplace;
@@ -1486,8 +1492,13 @@ if (sharedLog !is myLogger)
     }
     else
     {
+        version (Files_Supported)
+        {
         // Otherwise resort to the default logger
         return defaultSharedLoggerImpl;
+        }
+        else
+            assert(false, "unsupported");
     }
 }
 
@@ -1653,6 +1664,7 @@ functions.
 }
 
 /// Ditto
+version (Files_Supported)
 @system unittest
 {
     import std.logger.filelogger : FileLogger;
@@ -1950,6 +1962,7 @@ version (StdUnittest) private void testFuncNames(Logger logger) @safe
     assert(l.logLevel == LogLevel.all);
 }
 
+version (Files_Supported)
 @system unittest // default logger
 {
     import std.file : deleteme, exists, remove;
@@ -2946,6 +2959,7 @@ private void trustedStore(T)(ref shared T dst, ref T src) @trusted
     assert(atomicOp!"=="(logged_count, 4));
 }
 
+version (Files_Supported)
 @safe unittest
 {
     auto dl = () @trusted {
@@ -3031,6 +3045,7 @@ private void trustedStore(T)(ref shared T dst, ref T src) @trusted
 }
 
 // https://issues.dlang.org/show_bug.cgi?id=15517
+version (Files_Supported)
 @system unittest
 {
     import std.file : exists, remove, tempDir;
