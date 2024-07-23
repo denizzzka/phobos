@@ -1637,7 +1637,7 @@ class ErrnoException : Exception
     final @property string errnoMsg() nothrow pure scope @nogc @safe { return _errnoMsg; }
     private string _errnoMsg;
     /// Constructor which takes an error message. The current global $(REF errno, core,stdc,errno) value is used as error code.
-    this(string msg, string file = null, size_t line = 0) @safe
+    this(string msg, string file = null, size_t line = 0) @trusted
     {
         import core.stdc.errno : errno;
         this(msg, errno, file, line);
