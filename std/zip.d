@@ -268,14 +268,10 @@ final class ArchiveMember
             _madeVersion &= 0x00FF;
             _madeVersion |= 0x0300; // attributes are in UNIX format
         }
-        else version (Windows)
+        else //version (Windows)
         {
             _externalAttributes = attr;
             _madeVersion &= 0x00FF; // attributes are in MS-DOS and OS/2 format
-        }
-        else
-        {
-            static assert(0, "Unimplemented platform");
         }
     }
 
@@ -296,15 +292,11 @@ final class ArchiveMember
                 return _externalAttributes >> 16;
             return 0;
         }
-        else version (Windows)
+        else //version (Windows)
         {
             if ((_madeVersion & 0xFF00) == 0x0000)
                 return _externalAttributes;
             return 0;
-        }
-        else
-        {
-            static assert(0, "Unimplemented platform");
         }
     }
 
