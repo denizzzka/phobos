@@ -519,6 +519,7 @@ Hello, Jimmy!
 struct File
 {
     import core.atomic : atomicOp, atomicStore, atomicLoad;
+    import core.stdc.stdio;
     import std.range.primitives : ElementEncodingType;
     import std.traits : isScalarType, isArray;
     enum Orientation { unknown, narrow, wide }
@@ -908,7 +909,12 @@ Params:
             errnoEnforce(fp);
         }
         else
-            static assert(0, "no fdopen() available");
+        {
+            import core.stdc.stdio: fdopen;
+
+            auto fp = fdopen(fd, modez);
+            errnoEnforce(fp);
+        }
 
         this = File(fp, name);
     }
@@ -974,6 +980,7 @@ Throws: `Exception` if the file is not opened.
  */
     @property bool eof() const @trusted pure
     {
+        import core.stdc.stdio; // feof
         import std.exception : enforce;
 
         enforce(_p && _p.handle, "Calling eof() against an unopened file.");
@@ -1000,6 +1007,8 @@ $(CSTDIO ferror) for the file handle.
  */
     @property bool error() const @trusted pure nothrow
     {
+        import core.stdc.stdio; // ferror
+
         return !isOpen || .ferror(cast(FILE*) _p.handle);
     }
 
@@ -1147,9 +1156,14 @@ Throws: `Exception` if the file is not opened or if the OS call fails.
             import std.exception : errnoEnforce;
             errnoEnforce(fcntl(fileno, F_FULLFSYNC, 0) != -1, "fcntl failed");
         }
-        else
+        else version (Posix)
         {
             import core.sys.posix.unistd : fsync;
+            import std.exception : errnoEnforce;
+            errnoEnforce(fsync(fileno) == 0, "fsync failed");
+        }
+        else
+        {
             import std.exception : errnoEnforce;
             errnoEnforce(fsync(fileno) == 0, "fsync failed");
         }
@@ -1369,6 +1383,13 @@ Throws: `Exception` if the file is not opened.
             import core.sys.posix.stdio : fseeko, off_t;
             alias fseekFun = fseeko;
         }
+        else
+        {
+            import core.stdc.stdio : fseeko, off_t;
+
+            alias fseekFun = fseeko;
+        }
+
         errnoEnforce(fseekFun(_p.handle, to!off_t(offset), origin) == 0,
                 "Could not seek in file `"~_name~"'");
     }
@@ -1427,6 +1448,11 @@ Throws: `Exception` if the file is not opened.
         else version (Posix)
         {
             import core.sys.posix.stdio : ftello;
+            immutable result = ftello(cast(FILE*) _p.handle);
+        }
+        else
+        {
+            import core.stdc.stdio : ftello;
             immutable result = ftello(cast(FILE*) _p.handle);
         }
         errnoEnforce(result != -1,
@@ -1575,7 +1601,7 @@ $(UL
                     "Could not set lock for file `"~_name~"'");
         }
         else
-            static assert(false);
+            assert(false, "unimplemented");
     }
 
 /**
@@ -1620,7 +1646,7 @@ specified file segment was already locked.
             return true;
         }
         else
-            static assert(false);
+            assert(false, "unimplemented");
     }
 
 /**
@@ -1646,7 +1672,7 @@ Removes the lock over the specified file segment.
                 "Could not remove lock for file `"~_name~"'");
         }
         else
-            static assert(false);
+            assert(false, "unimplemented");
     }
 
     version (Windows)
@@ -5205,7 +5231,7 @@ Initialize with a message and an error code.
     }
 
 /// ditto
-    static void opCall() @safe
+    static void opCall() @trusted
     {
         throw new StdioException(null, core.stdc.errno.errno);
     }
@@ -5826,7 +5852,7 @@ private size_t readlnImpl(FILE* fps, ref char[] buf, dchar terminator, File.Orie
             }
             else
             {
-                static assert(0);
+                assert(false, "unimplemented");
             }
         }
 
