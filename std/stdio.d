@@ -105,6 +105,12 @@ file descriptor, aka fileno, aka fildes
 
 */
 
+static import std.file;
+static if(__traits(compiles, std.file.deleteme))
+    private enum FS_Supported = true;
+else
+    private enum FS_Supported = false;
+
 import core.stdc.stddef : wchar_t;
 public import core.stdc.stdio;
 import std.algorithm.mutation : copy;
@@ -609,6 +615,7 @@ Throws: `ErrnoException` if the file could not be opened.
         this(name.to!string, mode.to!string);
     }
 
+    static if(FS_Supported)
     @safe unittest
     {
         static import std.file;
@@ -802,6 +809,7 @@ Throws: `ErrnoException` in case of error.
             _name = name;
     }
 
+    static if(FS_Supported)
     @safe unittest // Test changing filename
     {
         import std.exception : assertThrown, assertNotThrown;
@@ -824,6 +832,7 @@ Throws: `ErrnoException` in case of error.
 
     version (CRuntime_DigitalMars) {} else // Not implemented
     version (CRuntime_Microsoft) {} else // Not implemented
+    static if(FS_Supported)
     @safe unittest // Test changing mode
     {
         import std.exception : assertThrown, assertNotThrown;
@@ -1012,6 +1021,7 @@ $(CSTDIO ferror) for the file handle.
         return !isOpen || .ferror(cast(FILE*) _p.handle);
     }
 
+    static if(FS_Supported)
     @safe unittest
     {
         // https://issues.dlang.org/show_bug.cgi?id=12349
@@ -1043,6 +1053,7 @@ Throws: `ErrnoException` on failure if closing the file.
         }
     }
 
+    static if(FS_Supported)
     @safe unittest
     {
         static import std.file;
@@ -1111,6 +1122,7 @@ Throws: `Exception` if the file is not opened or if the call to `fflush` fails.
         errnoEnforce(.fflush(_p.handle) == 0);
     }
 
+    static if(FS_Supported)
     @safe unittest
     {
         // https://issues.dlang.org/show_bug.cgi?id=12349
@@ -1215,6 +1227,7 @@ Throws: `ErrnoException` if the file is not opened or the call to `fread` fails.
     }
 
     ///
+    static if(FS_Supported)
     @system unittest
     {
         static import std.file;
@@ -1230,6 +1243,7 @@ Throws: `ErrnoException` if the file is not opened or the call to `fread` fails.
     }
 
     // https://issues.dlang.org/show_bug.cgi?id=21729
+    static if(FS_Supported)
     @system unittest
     {
         import std.exception : assertThrown;
@@ -1321,6 +1335,7 @@ Throws: `ErrnoException` if the file is not opened or if the call to `fwrite` fa
     }
 
     ///
+    static if(FS_Supported)
     @system unittest
     {
         static import std.file;
@@ -1394,6 +1409,7 @@ Throws: `Exception` if the file is not opened.
                 "Could not seek in file `"~_name~"'");
     }
 
+    static if(FS_Supported)
     @system unittest
     {
         import std.conv : text;
@@ -1461,6 +1477,7 @@ Throws: `Exception` if the file is not opened.
     }
 
     ///
+    static if(FS_Supported)
     @system unittest
     {
         import std.conv : text;
@@ -1916,6 +1933,7 @@ void main()
         return (() @trusted => cast(S) buf)();
     }
 
+    static if(FS_Supported)
     @safe unittest
     {
         import std.algorithm.comparison : equal;
@@ -1940,6 +1958,7 @@ void main()
         }}
     }
 
+    static if(FS_Supported)
     @safe unittest
     {
         static import std.file;
@@ -2075,6 +2094,7 @@ is recommended if you want to process a complete file.
         }
     }
 
+    static if(FS_Supported)
     @safe unittest
     {
         static import std.file;
@@ -2093,6 +2113,7 @@ is recommended if you want to process a complete file.
     }
 
     // https://issues.dlang.org/show_bug.cgi?id=15293
+    static if(FS_Supported)
     @safe unittest
     {
         // @system due to readln
@@ -2147,6 +2168,7 @@ is recommended if you want to process a complete file.
         return buf.length;
     }
 
+    static if(FS_Supported)
     @safe unittest
     {
         static import std.file;
@@ -2224,6 +2246,7 @@ $(CONSOLE
     }
 
     ///
+    static if(FS_Supported)
     @system unittest
     {
         static import std.file;
@@ -2244,6 +2267,7 @@ $(CONSOLE
     }
 
     // backwards compatibility with pointers
+    static if(FS_Supported)
     @system unittest
     {
         // @system due to readf
@@ -2266,6 +2290,7 @@ $(CONSOLE
     }
 
     // backwards compatibility (mixed)
+    static if(FS_Supported)
     @system unittest
     {
         // @system due to readf
@@ -2288,6 +2313,7 @@ $(CONSOLE
 
     // Nice error of std.stdio.readf with newlines
     // https://issues.dlang.org/show_bug.cgi?id=12260
+    static if(FS_Supported)
     @system unittest
     {
         static import std.file;
@@ -2571,6 +2597,7 @@ the contents may well have changed).
         return ByLineImpl!(Char, Terminator)(this, keepTerminator, terminator);
     }
 
+    static if(FS_Supported)
     @system unittest
     {
         static import std.file;
@@ -2589,6 +2616,7 @@ the contents may well have changed).
     }
 
     // https://issues.dlang.org/show_bug.cgi?id=19980
+    static if(FS_Supported)
     @system unittest
     {
         static import std.file;
@@ -2732,6 +2760,7 @@ $(REF readText, std,file)
             is(typeof(File("").byLineCopy!(char, char).front) == char[]));
     }
 
+    static if(FS_Supported)
     @system unittest
     {
         import std.algorithm.comparison : equal;
@@ -2811,6 +2840,7 @@ $(REF readText, std,file)
         test("sue\r", ["sue\r"], kt, '\r');
     }
 
+    static if(FS_Supported)
     @system unittest
     {
         import std.algorithm.comparison : equal;
@@ -2862,6 +2892,7 @@ $(REF readText, std,file)
         assert(!file.isOpen);
     }
 
+    static if(FS_Supported)
     @system unittest
     {
         static import std.file;
@@ -2901,6 +2932,7 @@ $(REF readText, std,file)
     }
 
     ///
+    static if(FS_Supported)
     @system unittest
     {
          static import std.file;
@@ -3075,6 +3107,7 @@ is empty, throws an `Exception`. In case of an I/O error throws
         return ByChunkImpl(this, buffer);
     }
 
+    static if(FS_Supported)
     @system unittest
     {
         static import std.file;
@@ -3100,6 +3133,7 @@ is empty, throws an `Exception`. In case of an I/O error throws
         assert(i == witness.length);
     }
 
+    static if(FS_Supported)
     @system unittest
     {
         static import std.file;
@@ -3541,6 +3575,7 @@ void main()
         return LockingBinaryWriter(this);
     }
 
+    static if(FS_Supported)
     @system unittest
     {
         import std.algorithm.mutation : reverse;
@@ -3779,6 +3814,7 @@ void main()
     safeTests();
 }
 
+static if(FS_Supported)
 @safe unittest
 {
     import std.exception : collectException;
@@ -3792,6 +3828,7 @@ void main()
     assert(f.tell == 0);
 }
 
+static if(FS_Supported)
 @safe unittest
 {
     static import std.file;
@@ -3817,6 +3854,7 @@ void main()
     assert(File(deleteme).readln() == "日本語日本語日本語日本語############日本語");
 }
 
+static if(FS_Supported)
 @safe unittest // wchar -> char
 {
     static import std.file;
@@ -3862,6 +3900,7 @@ void main()
     assert(std.file.readText!string(deleteme) == "y");
 }
 
+static if(FS_Supported)
 @safe unittest // https://issues.dlang.org/show_bug.cgi?id=18801
 {
     static import std.file;
@@ -3882,6 +3921,8 @@ void main()
     }
     assert(std.file.readText!string(deleteme).stripLeft("\uFEFF") == "foobar");
 }
+
+static if(FS_Supported)
 @safe unittest // char/wchar -> wchar_t
 {
     import core.stdc.locale : LC_CTYPE, setlocale;
@@ -3930,6 +3971,8 @@ void main()
     assert(std.file.readText!string(deleteme).stripLeft("\uFEFF") ==
         text(strs));
 }
+
+static if(FS_Supported)
 @safe unittest // https://issues.dlang.org/show_bug.cgi?id=18789
 {
     static import std.file;
@@ -3958,6 +4001,7 @@ void main()
     assert(e && e.msg == "Attempting to write to closed File");
 }
 
+static if(FS_Supported)
 @safe unittest // https://issues.dlang.org/show_bug.cgi?id=21592
 {
     import std.exception : collectException;
@@ -4087,6 +4131,7 @@ struct LockingTextReader
     }
 }
 
+static if(FS_Supported)
 @system unittest
 {
     // @system due to readf
@@ -4108,6 +4153,7 @@ struct LockingTextReader
 }
 
 // https://issues.dlang.org/show_bug.cgi?id=13686
+static if(FS_Supported)
 @system unittest
 {
     import std.algorithm.comparison : equal;
@@ -4127,6 +4173,7 @@ struct LockingTextReader
 }
 
 // https://issues.dlang.org/show_bug.cgi?id=12320
+static if(FS_Supported)
 @system unittest
 {
     static import std.file;
@@ -4142,6 +4189,7 @@ struct LockingTextReader
 }
 
 // https://issues.dlang.org/show_bug.cgi?id=14861
+static if(FS_Supported)
 @system unittest
 {
     // @system due to readf
@@ -4221,6 +4269,7 @@ if (!is(T[0] : File))
     trustedStdout.write(args);
 }
 
+static if(FS_Supported)
 @system unittest
 {
     static import std.file;
@@ -4319,6 +4368,7 @@ void writeln(T...)(T args)
     }
 }
 
+static if(FS_Supported)
 @system unittest
 {
     static import std.file;
@@ -4365,6 +4415,7 @@ void writeln(T...)(T args)
             "Hello!\nHello!\nHello!\nembedded\0null\n");
 }
 
+static if(FS_Supported)
 @system unittest
 {
     static import std.file;
@@ -4458,6 +4509,7 @@ void writef(Char, A...)(in Char[] fmt, A args)
     trustedStdout.writef(fmt, args);
 }
 
+static if(FS_Supported)
 @system unittest
 {
     static import std.file;
@@ -4499,6 +4551,7 @@ void writefln(Char, A...)(in Char[] fmt, A args)
     trustedStdout.writefln(fmt, args);
 }
 
+static if(FS_Supported)
 @system unittest
 {
     static import std.file;
@@ -4931,6 +4984,7 @@ struct lines
     }
 }
 
+static if(FS_Supported)
 @system unittest
 {
     static import std.file;
@@ -5128,6 +5182,7 @@ private struct ChunksImpl
     }
 }
 
+static if(FS_Supported)
 @system unittest
 {
     static import std.file;
@@ -5162,6 +5217,7 @@ private struct ChunksImpl
 }
 
 // Issue 21730 - null ptr dereferenced in ChunksImpl.opApply (SIGSEGV)
+static if(FS_Supported)
 @system unittest
 {
     import std.exception : assertThrown;
@@ -5190,6 +5246,7 @@ if (is(typeof(copy(data, stdout.lockingBinaryWriter))))
     copy(data, File(fileName, "wb").lockingBinaryWriter);
 }
 
+static if(FS_Supported)
 @system unittest
 {
     static import std.file;
@@ -5404,6 +5461,7 @@ alias stderr = makeGlobal!(StdFileHandle.stderr);
     }
 }
 
+static if(FS_Supported)
 @system unittest
 {
     static import std.file;
@@ -5892,6 +5950,7 @@ private size_t readlnImpl(FILE* fps, ref char[] buf, dchar terminator, File.Orie
     }
 }
 
+static if(FS_Supported)
 @system unittest
 {
     static import std.file;
@@ -5978,6 +6037,7 @@ version (linux)
     }
 }
 
+static if(FS_Supported)
 version (StdUnittest) private string testFilename(string file = __FILE__, size_t line = __LINE__) @safe
 {
     import std.conv : text;
