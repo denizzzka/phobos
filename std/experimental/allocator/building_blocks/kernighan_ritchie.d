@@ -654,6 +654,8 @@ fronting the GC allocator.
     assert((() pure nothrow @safe @nogc => alloc.primary.owns(b))() == Ternary.yes);
 }
 
+import std.experimental.allocator.mmap_allocator;
+
 /**
 The code below defines a scalable allocator consisting of 1 MB (or larger)
 blocks fetched from the garbage-collected heap. Each block is organized as a
@@ -664,6 +666,7 @@ It should perform slightly better because instead of searching through one
 large free list, it searches through several shorter lists in LRU order. Also,
 it actually returns memory to the operating system when possible.
 */
+static if(__traits(compiles, MmapAllocator))
 @system unittest
 {
     import std.algorithm.comparison : max;
@@ -705,6 +708,7 @@ it actually returns memory to the operating system when possible.
     }
 }
 
+static if(__traits(compiles, MmapAllocator))
 @system unittest
 {
     import std.algorithm.comparison : max;

@@ -759,7 +759,10 @@ public:
     }
 }
 
+import std.file;
+
 ///
+static if(__traits(compiles, deleteme))
 @system unittest
 {
     import std.experimental.allocator.building_blocks.free_list : FreeList;

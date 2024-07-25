@@ -16,7 +16,10 @@ Is `true` iff `A` is an allocator.
  */
 enum isAllocator(A) = (is(typeof(A.allocate(size_t.init)) == void[]) && is(typeof(A.alignment) : size_t));
 
+import std.experimental.allocator.mmap_allocator;
+
 ///
+static if(__traits(compiles, MmapAllocator))
 @safe @nogc nothrow pure
 unittest
 {

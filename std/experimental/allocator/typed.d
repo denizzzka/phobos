@@ -393,7 +393,10 @@ struct TypedAllocator(PrimaryAllocator, Policies...)
     }
 }
 
+import std.experimental.allocator.mmap_allocator;
+
 ///
+static if(__traits(compiles, MmapAllocator))
 @system unittest
 {
     import std.experimental.allocator.gc_allocator : GCAllocator;
