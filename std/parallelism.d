@@ -4473,6 +4473,8 @@ version (StdUnittest)
                poolInstance.asyncBuf(filter!"a == a"(iota(1_000_002)))
            ));
 
+    import std.file;
+    static if(__traits(compiles, deleteme))
     {
         import std.conv : to;
         import std.file : deleteme;

@@ -2004,6 +2004,9 @@ version (Files_Supported)
     file.close();
 }
 
+import std.file;
+
+static if(__traits(compiles, deleteme))
 @system unittest
 {
     import std.file : deleteme, remove;

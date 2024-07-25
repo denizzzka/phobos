@@ -142,7 +142,10 @@ class MultiLogger : Logger
     assert(n1.line == line);
 }
 
+import std.file;
+
 // Issue #16
+static if(__traits(compiles, deleteme))
 @system unittest
 {
     import std.file : deleteme;
@@ -187,6 +190,7 @@ class MultiLogger : Logger
     assert(line.indexOf(iMsg) != -1, line ~ ":" ~ tMsg);
 }
 
+static if(__traits(compiles, deleteme))
 @system unittest
 {
     auto dl = cast(FileLogger) sharedLog;

@@ -12186,6 +12186,8 @@ want to search in that range by only providing a value for that member.
 }
 
 // Test on an input range
+import std.file;
+static if(__traits(compiles, exists))
 @system unittest
 {
     import std.conv : text;
@@ -14350,7 +14352,10 @@ template isSomeFiniteCharInputRange(R)
         && isSomeChar!(ElementEncodingType!R);
 }
 
+import std.path;
+
 ///
+static if(__traits(compiles, chainPath))
 @safe unittest
 {
     import std.path : chainPath;
