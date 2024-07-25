@@ -21,6 +21,8 @@
 module std.internal.math.biguintarm;
 
 version (LDC):
+version (ARM_Thumb) {} // RSC instruction isn't supported
+else
 version (ARM):
 
 import ldc.llvmasm;
