@@ -422,7 +422,7 @@ public:
             }
             else static assert(0, "Unsupported OS");
         }
-        else static assert(0, "Unsupported OS");
+        else assert(false, "Unsupported OS");
     }
 
     @safe unittest
@@ -6809,6 +6809,7 @@ public:
             immutable tz = WindowsTimeZone.getTimeZone("Pacific Standard Time");
         }
 
+        static if(__traits(compiles, tz))
         {
             auto dt = DateTime(2011, 1, 13, 8, 17, 2);
             auto d = msecs(296);
@@ -11864,6 +11865,8 @@ private @safe:
                                        : WindowsTimeZone.getTimeZone("Mountain Standard Time");
         }
 
+        static if(__traits(compiles, otherTZ))
+        {
         immutable ot = otherTZ.utcToTZ(0);
 
         auto diffs = [0L, lt, ot];
@@ -11875,6 +11878,7 @@ private @safe:
         testTZs = [diffAA[diffs[0]], diffAA[diffs[1]], diffAA[diffs[2]]];
 
         testFracSecs = [Duration.zero, hnsecs(1), hnsecs(5007), hnsecs(9_999_999)];
+        }
 
         foreach (year; testYearsBC)
         {

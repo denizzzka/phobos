@@ -1935,6 +1935,8 @@ class Base64Exception : Exception
     }
 
     { // Encoder and Decoder
+        import std.file;
+        static if(__traits(compiles, deleteme))
         {
             string encode_file = std.file.deleteme ~ "-testingEncoder";
             std.file.write(encode_file, "\nf\nfo\nfoo\nfoob\nfooba\nfoobar");
@@ -1955,6 +1957,7 @@ class Base64Exception : Exception
             assert(i == witness.length);
         }
 
+        static if(__traits(compiles, deleteme))
         {
             string decode_file = std.file.deleteme ~ "-testingDecoder";
             std.file.write(decode_file, "\nZg==\nZm8=\nZm9v\nZm9vYg==\nZm9vYmE=\nZm9vYmFy");

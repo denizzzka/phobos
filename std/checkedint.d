@@ -1882,6 +1882,8 @@ static:
     short y1 = cast(const byte) y;
 }
 
+import std.file; //exists
+static if(__traits(compiles, exists))
 @system unittest
 {
     auto a = checked!Warn(int.min);

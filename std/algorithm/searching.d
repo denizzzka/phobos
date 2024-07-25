@@ -1304,6 +1304,8 @@ if (isInputRange!R &&
     }}
 }
 
+import std.path;
+static if(__traits(compiles, asRelativePath))
 @safe pure unittest
 {
     //example from https://issues.dlang.org/show_bug.cgi?id=19727

@@ -631,7 +631,10 @@ private noreturn bailOut(E : Throwable = Exception)(string file, size_t line, sc
  +/
 alias errnoEnforce = enforce!ErrnoException;
 
+import std.file;
+
 ///
+static if(__traits(compiles, thisExePath))
 @system unittest
 {
     import core.stdc.stdio : fclose, fgets, fopen;

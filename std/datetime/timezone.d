@@ -196,6 +196,8 @@ public:
     // Since reading in the time zone files could be expensive, most unit tests
     // are consolidated into this one unittest block which minimizes how often
     // it reads a time zone file.
+    import std.file; //exists
+    static if(__traits(compiles, exists))
     @system unittest
     {
         import core.exception : AssertError;
