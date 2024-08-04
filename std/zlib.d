@@ -59,6 +59,9 @@ module std.zlib;
 
 import etc.c.zlib;
 
+//TODO: check if compiles ZLIB_VERSION
+version (none):
+
 // Values for 'mode'
 
 enum

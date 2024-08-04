@@ -112,6 +112,9 @@ void main()
  */
 module std.zip;
 
+//TODO: check if compiles std.zlib
+version (none):
+
 import std.exception : enforce;
 
 // Non-Android/Apple ARM POSIX-only, because we can't rely on the unzip
