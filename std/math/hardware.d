@@ -14,6 +14,9 @@ Source: $(PHOBOSSRC std/math/hardware.d)
 
 module std.math.hardware;
 
+// Maybe, for soft float support module should be named std.math.software?
+version (D_HardFloat):
+
 static import core.stdc.fenv;
 
 version (LDC) import ldc.attributes;
