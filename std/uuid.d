@@ -593,8 +593,8 @@ public struct UUID
                 data[7]
             ];
 
-            auto hnsecs = rand_a.bigEndianToNative!ushort;
-            ret += dur!"hnsecs"(hnsecs);
+            const float hnsecs = rand_a.bigEndianToNative!ushort / MonotonicUUIDsFactory.subMsecsPart;
+            ret += dur!"hnsecs"(cast(ulong) hnsecs);
 
             return ret;
         }
@@ -1420,6 +1420,10 @@ struct MonotonicUUIDsFactory
         epochTimePoint.setTimeElapsed = Clock.currTime - SysTime.fromUnixTime(0);
     }
 
+    // hnsecs is 1/10_000 of millisecond
+    // rand_a size is 12 bits (4096 values)
+    private enum float subMsecsPart = 1.0f / 10_000 * 4096;
+
     /**
      * Returns a monotonic timestamp + random based UUIDv7
      * as described in RFC 9562 (Method 3).
@@ -1439,7 +1443,7 @@ struct MonotonicUUIDsFactory
 
         // hnsecs is 1/10_000 of millisecond
         // rand_a size is 12 bits (4096 values)
-        const q = (cast(float)curr.hnsecs) / 10_000 * 4096;
+        const float q = curr.hnsecs * subMsecsPart;
         writeln("q=", q);
         const qhnsecs = cast(ulong) q;
         writeln("qhnsecs=", qhnsecs);
@@ -1491,7 +1495,10 @@ unittest
         + dur!"usecs"(500)
         + dur!"hnsecs"(5);
 
+    const ds = d.split!("msecs", "usecs", "hnsecs");
+
     writeln("d =", d);
+    writeln("d.s=", ds);
 
     f.epochTimePoint.setTimeElapsed = d;
 
@@ -1501,13 +1508,18 @@ unittest
     assert(u.uuidVersion == UUID.Version.timestampRandom);
 
     const r = u.v7Timestamp_method3();
-    const s = (r - SysTime.fromUnixTime(0)).split!("msecs", "usecs", "hnsecs");
+    const s = (r - SysTime.fromUnixTime(0)).split!("usecs", "hnsecs");
 
     writeln(u);
     writeln("u =", r);
-    writeln("us=", s);
 
-    d += dur!"hnsecs"(1);
+    const r_s = r.fracSecs.split!("msecs", "usecs");
+
+    writeln("r_s=", r_s);
+
+    assert(r_s.usecs == ds.usecs);
+
+    d += dur!"usecs"(1);
     f.epochTimePoint.setTimeElapsed = d;
     writeln("d =", d);
 
