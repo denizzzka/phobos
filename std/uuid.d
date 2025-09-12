@@ -1404,7 +1404,7 @@ struct MonotonicUUIDsFactory
      * Returns a monotonic timestamp + random based UUIDv7
      * as described in RFC 9562 (Method 3).
      */
-    UUID createUUIDv7()
+    UUID createUUIDv7_method3()
     {
         mtx.lock();
         scope(exit) mtx.unlock();
@@ -1439,16 +1439,16 @@ unittest
     writeln(Clock.currTime());
 
     MonotonicUUIDsFactory f;
-    UUID u = f.createUUIDv7();
-    UUID u2 = f.createUUIDv7();
+    UUID u = f.createUUIDv7_method3();
+    UUID u2 = f.createUUIDv7_method3();
 
     assert(u.uuidVersion == UUID.Version.timestampRandom);
     //~ assert(u.v7Timestamp());
 
     writeln(u);
-    writeln(u.v7Timestamp());
+    writeln(u.v7Timestamp().stdTime);
     writeln(u2);
-    writeln(u2.v7Timestamp());
+    writeln(u2.v7Timestamp().stdTime);
 }
 
 /**
