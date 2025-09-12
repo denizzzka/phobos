@@ -1379,7 +1379,7 @@ if (isInputRange!RNG && isIntegral!(ElementType!RNG))
 }
 
 /**
- * This function returns a timestamp + random based UUID aka. uuid v7.
+ * This function returns a monotonic timestamp + random based UUID aka. UUID v7.
  */
 UUID timestampRandomUUID()
 {
