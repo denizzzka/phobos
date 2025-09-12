@@ -323,14 +323,14 @@ public struct UUID
          *   random = UUID V7 has 74 bits of random data, which rounds to 10 ubyte's.
          *    If no random data is given, random data is generated.
          */
-        @safe pure this(SysTime timestamp, ubyte[10] random = generateV7RandomData())
+        @safe pure this(SysTime timestamp, ubyte[10] random = generateV7RandomData!10)
         {
             ulong epoch = (timestamp - SysTime.fromUnixTime(0)).total!"msecs";
             this(epoch, random);
         }
 
         /// ditto
-        @safe pure this(ulong epoch_msecs, ubyte[10] random = generateV7RandomData())
+        @safe pure this(ulong epoch_msecs, ubyte[10] random = generateV7RandomData!10)
         {
             import std.bitmanip : nativeToBigEndian;
 
@@ -1384,7 +1384,7 @@ if (isInputRange!RNG && isIntegral!(ElementType!RNG))
 }
 
 ///
-struct UUIDv7Factory
+struct MonotonicUUIDsFactory
 {
     import core.sync.mutex;
     import std.datetime.stopwatch;
@@ -1409,9 +1409,18 @@ struct UUIDv7Factory
         auto dur = epochTimePoint.peek;
         auto msecs = dur.total!"msecs";
 
-        ubyte[10] fake_random;
-        return UUID(msecs, fake_random);
+        ubyte[10] mono_and_random;
+        return UUID(msecs, mono_and_random);
     }
+}
+
+unittest
+{
+    MonotonicUUIDsFactory factory;
+    UUID u = factory.createUUIDv7();
+
+    import std.stdio;
+    writeln(u);
 }
 
 /**
@@ -1830,12 +1839,12 @@ enum uuidRegex = "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}"~
     ]);
 }
 
-private ubyte[10] generateV7RandomData() {
+private ubyte[Size] generateV7RandomData(ubyte Size)() {
     import std.random : Random, uniform, unpredictableSeed;
 
     auto rnd = Random(unpredictableSeed!(ubyte)());
 
-    ubyte[10] bytes;
+    ubyte[Size] bytes;
     foreach (idx; 0 .. bytes.length)
     {
         bytes[idx] = uniform!(ubyte)(rnd);
