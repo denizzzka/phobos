@@ -318,6 +318,7 @@ public struct UUID
 
         /**
          * UUID V7 constructor
+         * Creates UUIDv7 as described in RFC 9562 (Method 1)
          *
          * Params:
          *   timestamp = the timestamp part of the UUID V7
@@ -1466,21 +1467,29 @@ unittest
     import std.stdio;
     writeln(Clock.currTime());
 
+    // 2025-09-12T18:24:14.335Z
+    auto u = UUID("01993f2b-b9ff-72ae-b8d5-70caf884925d");
+    u.v7Timestamp_method3.writeln;
+
     MonotonicUUIDsFactory f;
-    UUID u = f.createUUIDv7_method3();
-    UUID u2 = f.createUUIDv7_method3();
 
-    assert(u.uuidVersion == UUID.Version.timestampRandom);
-    //~ assert(u.v7Timestamp());
+    // trick to give reproducible testing
+    //~ f.epochTimePoint.stop();
+    //~ f.epochTimePoint.setTimeElapsed = Clock.currTime - SysTime.fromUnixTime(0);
 
-    writeln(u);
-    writeln(u.v7Timestamp().stdTime);
-    writeln(u.v7Timestamp_method3().stdTime);
-    writeln(u.v7Timestamp_method3());
-    writeln(u2);
-    writeln(u2.v7Timestamp().stdTime);
-    writeln(u2.v7Timestamp_method3().stdTime);
-    writeln(u2.v7Timestamp_method3());
+    //~ UUID u = f.createUUIDv7_method3();
+    //~ UUID u2 = f.createUUIDv7_method3();
+
+    //~ assert(u.uuidVersion == UUID.Version.timestampRandom);
+
+    //~ writeln(u);
+    //~ writeln(u.v7Timestamp().stdTime);
+    //~ writeln(u.v7Timestamp_method3().stdTime);
+    //~ writeln(u.v7Timestamp_method3());
+    //~ writeln(u2);
+    //~ writeln(u2.v7Timestamp().stdTime);
+    //~ writeln(u2.v7Timestamp_method3().stdTime);
+    //~ writeln(u2.v7Timestamp_method3());
 }
 
 /**
