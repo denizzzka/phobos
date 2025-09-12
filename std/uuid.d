@@ -1399,7 +1399,7 @@ struct MonotonicUUIDsFactory
         epochTimePoint.setTimeElapsed = Clock.currTime - SysTime.fromUnixTime(0);
     }
 
-    /// This function returns a monotonic timestamp + random based UUIDv7.
+    /// Returns a monotonic timestamp + random based UUIDv7.
     UUID createUUIDv7()
     {
         mtx.lock();
@@ -1420,12 +1420,11 @@ struct MonotonicUUIDsFactory
         RandPart rnd;
         with(rnd)
         {
+            // RFC 9562, Method 3
             const ubyte[8] u = curr.usecs.nativeToBigEndian;
             rand_a = u[6 .. 8];
+            rand_b = generateV7RandomData!8;
         }
-
-        import std.stdio;
-        writeln(curr);
 
         return UUID(curr.msecs, rnd.rand);
     }
@@ -1433,11 +1432,17 @@ struct MonotonicUUIDsFactory
 
 unittest
 {
-    MonotonicUUIDsFactory factory;
-    UUID u = factory.createUUIDv7();
-
     import std.stdio;
+    writeln(Clock.currTime());
+
+    MonotonicUUIDsFactory f;
+    UUID u = f.createUUIDv7();
+
+    assert(u.uuidVersion == UUID.Version.timestampRandom);
+    //~ assert(u.v7Timestamp());
+
     writeln(u);
+    writeln(u.v7Timestamp());
 }
 
 /**
