@@ -1449,12 +1449,21 @@ struct MonotonicUUIDsFactory
         RandPart rp;
         with(rp)
         {
-            // hnsecs gives at least 14 bits and, by a lucky coincidence,
-            // additional two bits will be consumed by a version value
-            const ubyte[8] u = curr.hnsecs.nativeToBigEndian;
-            rand_a = u[6 .. 8];
+            // Whole rand_a is 16 bit, but usable only 12 MSB.
+            // hnsecs gives at least 14 most significant bits and
+            // additional 4 less significant bits will be consumed
+            // by a version value
+            const ubyte[8] hn = curr.hnsecs.nativeToBigEndian;
+            rand_a = hn[6 .. 8];
             writefln("rand_a=%(%x %)", rand_a);
             rand_b = rnd;
+
+            // Using remaining 2 bits for additional monotonicity.
+            // First two bits reserved for variant field, latest 4 for random
+            rand_b[0] = (rand_b[0] & 0b_0000_1111) | hn[6];
+            writefln("curr.hnsecs=%d", curr.hnsecs);
+            writefln("hn[6]=%b", hn[6]);
+            writefln("rand_b[0]=%b", rand_b[0]);
         }
 
         return UUID(curr.msecs, rp.rand);
@@ -1465,27 +1474,55 @@ struct MonotonicUUIDsFactory
 unittest
 {
     import std.stdio;
-    writeln(Clock.currTime());
+    import std.datetime;
+    //~ writeln(Clock.currTime());
 
     // 2025-09-12T18:24:14.335Z
-    auto u = UUID("01993f2b-b9ff-72ae-b8d5-70caf884925d");
-    u.v7Timestamp_method3.writeln;
+    //~ auto u = UUID("01993f2b-b9ff-72ae-b8d5-70caf884925d");
+    //~ u.writeln;
+    //~ u.v7Timestamp_method3.writeln;
 
     MonotonicUUIDsFactory f;
 
     // trick to give reproducible testing
-    //~ f.epochTimePoint.stop();
-    //~ f.epochTimePoint.setTimeElapsed = Clock.currTime - SysTime.fromUnixTime(0);
+    f.epochTimePoint.stop();
+    const st = SysTime(DateTime(2025, 9, 12, 21, 38, 45));
+    Duration d = st - SysTime.fromUnixTime(0)
+        + dur!"msecs"(2)
+        + dur!"usecs"(3)
+        + dur!"hnsecs"(5);
 
-    //~ UUID u = f.createUUIDv7_method3();
+    writeln("d =", d);
+
+    f.epochTimePoint.setTimeElapsed = d;
+
+    UUID u = f.createUUIDv7_method3();
     //~ UUID u2 = f.createUUIDv7_method3();
 
-    //~ assert(u.uuidVersion == UUID.Version.timestampRandom);
+    assert(u.uuidVersion == UUID.Version.timestampRandom);
 
-    //~ writeln(u);
+    const r = u.v7Timestamp_method3();
+    const s = (r - SysTime.fromUnixTime(0)).split!("msecs", "usecs", "hnsecs");
+
+    writeln(u);
+    writeln("u =", r);
+    writeln("us=", s);
+
+    d += dur!"hnsecs"(1);
+    f.epochTimePoint.setTimeElapsed = d;
+    writeln("d =", d);
+
+    UUID u2 = f.createUUIDv7_method3();
+
+    const r2 = u2.v7Timestamp_method3();
+    const s2 = (r2 - SysTime.fromUnixTime(0)).split!("msecs", "usecs", "hnsecs");
+
+    writeln(u2);
+    writeln("u =", r2);
+    writeln("us=", s2);
+
     //~ writeln(u.v7Timestamp().stdTime);
     //~ writeln(u.v7Timestamp_method3().stdTime);
-    //~ writeln(u.v7Timestamp_method3());
     //~ writeln(u2);
     //~ writeln(u2.v7Timestamp().stdTime);
     //~ writeln(u2.v7Timestamp_method3().stdTime);
