@@ -121,6 +121,7 @@ module std.uuid;
 }
 
 import core.time : dur;
+import std.bitmanip : nativeToBigEndian;
 import std.datetime.systime : SysTime;
 import std.datetime : Clock, DateTime, UTC;
 import std.range.primitives;
@@ -332,8 +333,6 @@ public struct UUID
         /// ditto
         @safe pure this(ulong epoch_msecs, ubyte[10] random = generateV7RandomData!10)
         {
-            import std.bitmanip : nativeToBigEndian;
-
             ubyte[8] epoch = epoch_msecs.nativeToBigEndian;
 
             this.data[0 .. 6] = epoch[2 .. 8];
@@ -1406,11 +1405,29 @@ struct MonotonicUUIDsFactory
         mtx.lock();
         scope(exit) mtx.unlock();
 
-        auto dur = epochTimePoint.peek;
-        auto msecs = dur.total!"msecs";
+        const dur = epochTimePoint.peek;
+        const curr = dur.split!("msecs", "usecs");
 
-        ubyte[10] mono_and_random;
-        return UUID(msecs, mono_and_random);
+        static union RandPart
+        {
+            ubyte[10] rand;
+            struct {
+                ubyte[2] rand_a;
+                ubyte[8] rand_b;
+            }
+        }
+
+        RandPart rnd;
+        with(rnd)
+        {
+            const ubyte[8] u = curr.usecs.nativeToBigEndian;
+            rand_a = u[6 .. 8];
+        }
+
+        import std.stdio;
+        writeln(curr);
+
+        return UUID(curr.msecs, rnd.rand);
     }
 }
 
