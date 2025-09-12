@@ -561,7 +561,7 @@ public struct UUID
 
         /**
          * If the UUID is of version 7 it has a timestamp that this function
-         * returns, otherwise and UUIDParsingException is thrown.
+         * returns, otherwise an UUIDParsingException is thrown.
          */
         SysTime v7Timestamp() const {
             if (this.uuidVersion != Version.timestampRandom)
@@ -577,6 +577,25 @@ public struct UUID
             ulong milli = tmp.bigEndianToNative!ulong;
 
             return SysTime(DateTime(1970, 1, 1), UTC()) + dur!"msecs"(milli);
+        }
+
+        /**
+         * If the UUID is of version 7 it has a timestamp that this function
+         * returns as described in RFC 9562 (Method 3), otherwise and
+         * UUIDParsingException is thrown.
+         */
+        SysTime v7Timestamp_method3() const {
+            auto ret = v7Timestamp();
+
+            const ubyte[2] rand_a = [
+                data[6] & 0x0f, // masks version bits
+                data[7]
+            ];
+
+            auto hnsecs = rand_a.bigEndianToNative!ushort;
+            ret += dur!"hnsecs"(hnsecs);
+
+            return ret;
         }
 
         /**
@@ -1429,7 +1448,8 @@ struct MonotonicUUIDsFactory
         RandPart rp;
         with(rp)
         {
-            //hnsecs gives at least 14 bits, first two bits will be substituted by version
+            // hnsecs gives at least 14 bits and, by a lucky coincidence,
+            // additional two bits will be consumed by a version value
             const ubyte[8] u = curr.hnsecs.nativeToBigEndian;
             rand_a = u[6 .. 8];
             writefln("rand_a=%(%x %)", rand_a);
@@ -1455,8 +1475,12 @@ unittest
 
     writeln(u);
     writeln(u.v7Timestamp().stdTime);
+    writeln(u.v7Timestamp_method3().stdTime);
+    writeln(u.v7Timestamp_method3());
     writeln(u2);
     writeln(u2.v7Timestamp().stdTime);
+    writeln(u2.v7Timestamp_method3().stdTime);
+    writeln(u2.v7Timestamp_method3());
 }
 
 /**
