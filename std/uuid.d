@@ -1404,13 +1404,18 @@ struct MonotonicUUIDsFactory
      * Returns a monotonic timestamp + random based UUIDv7
      * as described in RFC 9562 (Method 3).
      */
-    UUID createUUIDv7_method3()
+    UUID createUUIDv7_method3(ubyte[8] rnd = generateV7RandomData!8)
     {
         mtx.lock();
         scope(exit) mtx.unlock();
 
+    //~ do {
         const dur = epochTimePoint.peek;
-        const curr = dur.split!("msecs", "usecs");
+        const curr = dur.split!("msecs", "hnsecs");
+
+        import std.stdio;
+        //~ writefln("usecs=%+0b", curr.hnsecs);
+    //~ }while(true);
 
         static union RandPart
         {
@@ -1424,12 +1429,15 @@ struct MonotonicUUIDsFactory
         RandPart rp;
         with(rp)
         {
-            const ubyte[8] u = curr.usecs.nativeToBigEndian;
+            //hnsecs gives at least 14 bits, first two bits will be substituted by version
+            const ubyte[8] u = curr.hnsecs.nativeToBigEndian;
             rand_a = u[6 .. 8];
-            rand_b = generateV7RandomData!8;
+            writefln("rand_a=%(%x %)", rand_a);
+            rand_b = rnd;
         }
 
         return UUID(curr.msecs, rp.rand);
+        //~ return UUID.init;
     }
 }
 
