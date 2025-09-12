@@ -1437,6 +1437,13 @@ struct MonotonicUUIDsFactory
         //~ writefln("usecs=%+0b", curr.hnsecs);
     //~ }while(true);
 
+        // hnsecs is 1/10_000 of millisecond
+        // rand_a size is 12 bits (4096 values)
+        const q = (cast(float)curr.hnsecs) / 10_000 * 4096;
+        writeln("q=", q);
+        const qhnsecs = cast(ulong) q;
+        writeln("qhnsecs=", qhnsecs);
+
         static union RandPart
         {
             ubyte[10] rand;
@@ -1453,17 +1460,9 @@ struct MonotonicUUIDsFactory
             // hnsecs gives at least 14 most significant bits and
             // additional 4 less significant bits will be consumed
             // by a version value
-            const ubyte[8] hn = curr.hnsecs.nativeToBigEndian;
+            const ubyte[8] hn = qhnsecs.nativeToBigEndian;
             rand_a = hn[6 .. 8];
-            writefln("rand_a=%(%x %)", rand_a);
             rand_b = rnd;
-
-            // Using remaining 2 bits for additional monotonicity.
-            // First two bits reserved for variant field, latest 4 for random
-            rand_b[0] = (rand_b[0] & 0b_0000_1111) | hn[6];
-            writefln("curr.hnsecs=%d", curr.hnsecs);
-            writefln("hn[6]=%b", hn[6]);
-            writefln("rand_b[0]=%b", rand_b[0]);
         }
 
         return UUID(curr.msecs, rp.rand);
@@ -1488,8 +1487,8 @@ unittest
     f.epochTimePoint.stop();
     const st = SysTime(DateTime(2025, 9, 12, 21, 38, 45));
     Duration d = st - SysTime.fromUnixTime(0)
-        + dur!"msecs"(2)
-        + dur!"usecs"(3)
+        + dur!"msecs"(1)
+        + dur!"usecs"(500)
         + dur!"hnsecs"(5);
 
     writeln("d =", d);
