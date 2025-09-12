@@ -325,11 +325,16 @@ public struct UUID
          */
         @safe pure this(SysTime timestamp, ubyte[10] random = generateV7RandomData())
         {
+            ulong epoch = (timestamp - SysTime.fromUnixTime(0)).total!"msecs";
+            this(epoch, random);
+        }
+
+        /// ditto
+        @safe pure this(ulong epoch_msecs, ubyte[10] random = generateV7RandomData())
+        {
             import std.bitmanip : nativeToBigEndian;
 
-            ubyte[8] epoch = (timestamp - SysTime.fromUnixTime(0))
-                .total!"msecs"
-                .nativeToBigEndian;
+            ubyte[8] epoch = epoch_msecs.nativeToBigEndian;
 
             this.data[0 .. 6] = epoch[2 .. 8];
             this.data[6 .. $] = random;
@@ -1378,8 +1383,39 @@ if (isInputRange!RNG && isIntegral!(ElementType!RNG))
     assert(u1.uuidVersion == UUID.Version.randomNumberBased);
 }
 
+///
+struct UUIDv7Factory
+{
+    import core.sync.mutex;
+    import std.datetime.stopwatch;
+
+    private shared static Mutex mtx;
+    private __gshared StopWatch epochTimePoint;
+
+    shared static this()
+    {
+        mtx = new shared Mutex();
+
+        epochTimePoint.start();
+        epochTimePoint.setTimeElapsed = Clock.currTime - SysTime.fromUnixTime(0);
+    }
+
+    /// This function returns a monotonic timestamp + random based UUIDv7.
+    UUID createUUIDv7()
+    {
+        mtx.lock();
+        scope(exit) mtx.unlock();
+
+        auto dur = epochTimePoint.peek;
+        auto msecs = dur.total!"msecs";
+
+        ubyte[10] fake_random;
+        return UUID(msecs, fake_random);
+    }
+}
+
 /**
- * This function returns a monotonic timestamp + random based UUID aka. UUID v7.
+ * This function returns a timestamp + random based UUID aka. uuid v7.
  */
 UUID timestampRandomUUID()
 {
