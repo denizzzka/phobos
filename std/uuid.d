@@ -121,7 +121,7 @@ module std.uuid;
 }
 
 import core.time : dur;
-import std.bitmanip : nativeToBigEndian;
+import std.bitmanip : bigEndianToNative, nativeToBigEndian;
 import std.datetime.systime : SysTime;
 import std.datetime : Clock, DateTime, UTC;
 import std.range.primitives;
@@ -569,8 +569,6 @@ public struct UUID
                 throw new UUIDParsingException("The UUID is not of version" ~
                     " v7 therefore no timestamp exist", 0);
             }
-
-            import std.bitmanip : bigEndianToNative;
 
             ubyte[8] tmp = void;
             tmp[0 .. 2] = 0;
