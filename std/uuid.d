@@ -1445,7 +1445,7 @@ struct MonotonicUUIDsFactory
         // rand_a size is 12 bits (4096 values)
         const float q = curr.hnsecs * subMsecsPart;
         writeln("q=", q);
-        const qhnsecs = cast(ulong) q;
+        const qhnsecs = cast(ushort) q;
         writeln("qhnsecs=", qhnsecs);
 
         static union RandPart
@@ -1461,11 +1461,9 @@ struct MonotonicUUIDsFactory
         with(rp)
         {
             // Whole rand_a is 16 bit, but usable only 12 MSB.
-            // hnsecs gives at least 14 most significant bits and
-            // additional 4 less significant bits will be consumed
+            // additional 4 less significant bits consumed
             // by a version value
-            const ubyte[8] hn = qhnsecs.nativeToBigEndian;
-            rand_a = hn[6 .. 8];
+            rand_a = qhnsecs.nativeToBigEndian;
             rand_b = rnd;
         }
 
