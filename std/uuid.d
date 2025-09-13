@@ -1462,68 +1462,51 @@ struct MonotonicUUIDsFactory
 
 unittest
 {
+    import std.conv : to;
     import std.stdio;
     import std.datetime;
-    //~ writeln(Clock.currTime());
-
-    // 2025-09-12T18:24:14.335Z
-    //~ auto u = UUID("01993f2b-b9ff-72ae-b8d5-70caf884925d");
-    //~ u.writeln;
-    //~ u.v7Timestamp_method3.writeln;
 
     MonotonicUUIDsFactory f;
 
     // trick to give reproducible testing
-    f.epochTimePoint.stop();
-    const st = SysTime(DateTime(2025, 9, 12, 21, 38, 45));
-    Duration d = st - SysTime.fromUnixTime(0)
-        + dur!"msecs"(1)
-        + dur!"usecs"(500)
-        + dur!"hnsecs"(5);
+    Duration setElapsedOffset(Duration dura){
+        if(f.epochTimePoint.running)
+            f.epochTimePoint.stop();
 
-    const ds = d.split!("msecs", "usecs", "hnsecs");
+        const st = SysTime(DateTime(2025, 9, 12, 21, 38, 45), UTC());
+        Duration ret = st - SysTime.fromUnixTime(0) + dura;
+        f.epochTimePoint.setTimeElapsed = ret;
+        return ret;
+    }
 
-    writeln("d =", d);
-    writeln("d.s=", ds);
+    Duration d = dur!"msecs"(123) + dur!"usecs"(0) + dur!"hnsecs"(0);
+    setElapsedOffset(d);
 
-    f.epochTimePoint.setTimeElapsed = d;
+    const uuidv7_milli = f.createUUIDv7_method3().v7Timestamp;
 
-    UUID u = f.createUUIDv7_method3();
-    //~ UUID u2 = f.createUUIDv7_method3();
+    {
+        const st = f.createUUIDv7_method3().v7Timestamp_method3;
+        assert(cast(DateTime) st == DateTime(2025, 9, 12, 21, 38, 45), st.to!string);
 
-    assert(u.uuidVersion == UUID.Version.timestampRandom);
+        const sp = st.fracSecs.split!("msecs", "usecs");
+        assert(sp.msecs == 123, sp.to!string);
+        assert(sp.usecs == 0, sp.to!string);
+    }
 
-    const r = u.v7Timestamp_method3();
-    const s = (r - SysTime.fromUnixTime(0)).split!("usecs", "hnsecs");
+    d += dur!"hnsecs"(4);
+    setElapsedOffset(d);
 
-    writeln(u);
-    writeln("u =", r);
+    const uuidv7_milli_2 = f.createUUIDv7_method3().v7Timestamp;
+    assert(uuidv7_milli == uuidv7_milli_2);
 
-    const r_s = r.fracSecs.split!("msecs", "usecs");
+    {
+        const st = f.createUUIDv7_method3().v7Timestamp_method3;
+        assert(cast(DateTime) st == DateTime(2025, 9, 12, 21, 38, 45), st.to!string);
 
-    writeln("r_s=", r_s);
-
-    assert(r_s.usecs == ds.usecs);
-
-    d += dur!"usecs"(1);
-    f.epochTimePoint.setTimeElapsed = d;
-    writeln("d =", d);
-
-    UUID u2 = f.createUUIDv7_method3();
-
-    const r2 = u2.v7Timestamp_method3();
-    const s2 = (r2 - SysTime.fromUnixTime(0)).split!("msecs", "usecs", "hnsecs");
-
-    writeln(u2);
-    writeln("u =", r2);
-    writeln("us=", s2);
-
-    //~ writeln(u.v7Timestamp().stdTime);
-    //~ writeln(u.v7Timestamp_method3().stdTime);
-    //~ writeln(u2);
-    //~ writeln(u2.v7Timestamp().stdTime);
-    //~ writeln(u2.v7Timestamp_method3().stdTime);
-    //~ writeln(u2.v7Timestamp_method3());
+        const sp = st.fracSecs.split!("msecs", "usecs", "hnsecs");
+        assert(sp.msecs == 123, sp.to!string);
+        assert(sp.usecs == 1, sp.to!string);
+    }
 }
 
 /**
