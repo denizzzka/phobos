@@ -1415,7 +1415,7 @@ class MonotonicUUIDsFactory
     ref __start() shared => cast() startTimePoint;
 
     ///
-    this(in SysTime startTime = SysTime.fromUnixTime(0)) shared
+    this(in SysTime startTime = SysTime.fromUnixTime(0)) shared nothrow
     {
         mtx = new shared Mutex();
 
@@ -1462,8 +1462,7 @@ class MonotonicUUIDsFactory
     import std.conv : to;
     import std.datetime;
 
-    auto f = new shared MonotonicUUIDsFactory;
-    scope(exit) destroy(f);
+    scope f = new shared MonotonicUUIDsFactory;
 
     // trick to give reproducible testing
     Duration setElapsedOffset(Duration dura){
@@ -1512,8 +1511,7 @@ class MonotonicUUIDsFactory
 ///
 @system unittest
 {
-    auto f = new shared MonotonicUUIDsFactory;
-    scope(exit) destroy(f);
+    scope f = new shared MonotonicUUIDsFactory;
 
     UUID[100_000] uuids = void;
 
