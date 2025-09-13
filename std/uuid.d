@@ -1463,14 +1463,13 @@ struct MonotonicUUIDsFactory
 unittest
 {
     import std.conv : to;
-    import std.stdio;
     import std.datetime;
 
     MonotonicUUIDsFactory f;
 
     // trick to give reproducible testing
     Duration setElapsedOffset(Duration dura){
-        if(f.epochTimePoint.running)
+        if (f.epochTimePoint.running)
             f.epochTimePoint.stop();
 
         const st = SysTime(DateTime(2025, 9, 12, 21, 38, 45), UTC());
