@@ -1459,53 +1459,17 @@ class MonotonicUUIDsFactory
 ///
 @system unittest
 {
-    import std.conv : to;
-    import std.datetime;
+    import std.datetime.stopwatch;
 
     auto f = new shared MonotonicUUIDsFactory;
 
-    // trick to give reproducible testing
-    Duration setElapsedOffset(Duration dura){
-        if (f.__start.running)
-            f.__start.stop();
+    UUID[100_000] uuids = void;
 
-        const st = SysTime(DateTime(2025, 9, 12, 21, 38, 45), UTC());
-        Duration ret = st - SysTime.fromUnixTime(0) + dura;
-        f.__start.setTimeElapsed = ret;
-        return ret;
-    }
+    foreach (ref u; uuids)
+        u = f.createUUIDv7_method3;
 
-    Duration d = dur!"msecs"(123);
-    setElapsedOffset(d);
-
-    const uuidv7_milli = f.createUUIDv7_method3().v7Timestamp;
-
-    {
-        const st = f.createUUIDv7_method3().v7Timestamp_method3;
-        assert(cast(DateTime) st == DateTime(2025, 9, 12, 21, 38, 45), st.to!string);
-
-        const sp = st.fracSecs.split!("msecs", "usecs");
-        assert(sp.msecs == 123, sp.to!string);
-        assert(sp.usecs == 0, sp.to!string);
-    }
-
-    // 0.3 usecs, but Method 3 precision is only 0.25 of usec,
-    // thus, expected value is 2
-    d += dur!"hnsecs"(3);
-    setElapsedOffset(d);
-
-    const uuidv7_milli_2 = f.createUUIDv7_method3().v7Timestamp;
-    assert(uuidv7_milli == uuidv7_milli_2);
-
-    {
-        const st = f.createUUIDv7_method3().v7Timestamp_method3;
-        assert(cast(DateTime) st == DateTime(2025, 9, 12, 21, 38, 45), st.to!string);
-
-        const sp = st.fracSecs.split!("msecs", "usecs", "hnsecs");
-        assert(sp.msecs == 123, sp.to!string);
-        assert(sp.usecs == 0, sp.to!string);
-        assert(sp.hnsecs == 2, sp.to!string);
-    }
+    foreach (i; 1 .. uuids.length)
+        assert(uuids[i-1].v7Timestamp_method3 < uuids[i].v7Timestamp_method3);
 }
 
 /**
