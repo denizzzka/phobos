@@ -1433,20 +1433,9 @@ struct MonotonicUUIDsFactory
         mtx.lock();
         scope(exit) mtx.unlock();
 
-    //~ do {
         const dur = epochTimePoint.peek;
         const curr = dur.split!("msecs", "hnsecs");
-
-        import std.stdio;
-        //~ writefln("usecs=%+0b", curr.hnsecs);
-    //~ }while(true);
-
-        // hnsecs is 1/10_000 of millisecond
-        // rand_a size is 12 bits (4096 values)
-        const float q = curr.hnsecs * subMsecsPart;
-        writeln("q=", q);
-        const qhnsecs = cast(ushort) q;
-        writeln("qhnsecs=", qhnsecs);
+        const qhnsecs = cast(ushort) (curr.hnsecs * subMsecsPart);
 
         static union RandPart
         {
@@ -1468,7 +1457,6 @@ struct MonotonicUUIDsFactory
         }
 
         return UUID(curr.msecs, rp.rand);
-        //~ return UUID.init;
     }
 }
 
