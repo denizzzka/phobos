@@ -1404,20 +1404,21 @@ if (isInputRange!RNG && isIntegral!(ElementType!RNG))
 }
 
 ///
-struct MonotonicUUIDsFactory
+class MonotonicUUIDsFactory
 {
     import core.sync.mutex;
     import std.datetime.stopwatch;
 
-    private shared static Mutex mtx;
+    private shared Mutex mtx;
     private __gshared StopWatch epochTimePoint;
 
-    shared static this()
+    ///
+    this(in SysTime startTime = SysTime.fromUnixTime(0))
     {
         mtx = new shared Mutex();
 
         epochTimePoint.start();
-        epochTimePoint.setTimeElapsed = Clock.currTime - SysTime.fromUnixTime(0);
+        epochTimePoint.setTimeElapsed = Clock.currTime - startTime;
     }
 
     // hnsecs is 1/10_000 of millisecond
@@ -1465,7 +1466,7 @@ unittest
     import std.conv : to;
     import std.datetime;
 
-    MonotonicUUIDsFactory f;
+    auto f = new MonotonicUUIDsFactory;
 
     // trick to give reproducible testing
     Duration setElapsedOffset(Duration dura){
