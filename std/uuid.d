@@ -1463,6 +1463,7 @@ class MonotonicUUIDsFactory
     import std.datetime;
 
     auto f = new shared MonotonicUUIDsFactory;
+    scope(exit) destroy(f);
 
     // trick to give reproducible testing
     Duration setElapsedOffset(Duration dura){
@@ -1512,6 +1513,7 @@ class MonotonicUUIDsFactory
 @system unittest
 {
     auto f = new shared MonotonicUUIDsFactory;
+    scope(exit) destroy(f);
 
     UUID[100_000] uuids = void;
 
