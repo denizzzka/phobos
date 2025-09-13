@@ -1438,26 +1438,15 @@ class MonotonicUUIDsFactory
         const curr = dur.split!("msecs", "hnsecs");
         const qhnsecs = cast(ushort) (curr.hnsecs * subMsecsPart);
 
-        static union RandPart
-        {
-            ubyte[10] rand;
-            struct {
-                ubyte[2] rand_a;
-                ubyte[8] rand_b;
-            }
-        }
+        ubyte[10] rand;
 
-        RandPart rp;
-        with(rp)
-        {
-            // Whole rand_a is 16 bit, but usable only 12 MSB.
-            // additional 4 less significant bits consumed
-            // by a version value
-            rand_a = qhnsecs.nativeToBigEndian;
-            rand_b = rnd;
-        }
+        // Whole rand_a is 16 bit, but usable only 12 MSB.
+        // additional 4 less significant bits consumed
+        // by a version value
+        rand[0 .. 2] = qhnsecs.nativeToBigEndian;
+        rand[2 .. $] = rnd;
 
-        return UUID(curr.msecs, rp.rand);
+        return UUID(curr.msecs, rand);
     }
 }
 
