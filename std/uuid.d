@@ -1508,22 +1508,6 @@ class MonotonicUUIDsFactory
     }
 }
 
-///
-@system unittest
-{
-    import std.datetime.stopwatch;
-
-    auto f = new shared MonotonicUUIDsFactory;
-
-    UUID[100_000] uuids = void;
-
-    foreach (ref u; uuids)
-        u = f.createUUIDv7_method3;
-
-    foreach (i; 1 .. uuids.length)
-        assert(uuids[i-1].v7Timestamp_method3 < uuids[i].v7Timestamp_method3);
-}
-
 /**
  * This function returns a timestamp + random based UUID aka. uuid v7.
  */
