@@ -1479,7 +1479,7 @@ unittest
         return ret;
     }
 
-    Duration d = dur!"msecs"(123) + dur!"usecs"(0) + dur!"hnsecs"(0);
+    Duration d = dur!"msecs"(123);
     setElapsedOffset(d);
 
     const uuidv7_milli = f.createUUIDv7_method3().v7Timestamp;
@@ -1493,7 +1493,9 @@ unittest
         assert(sp.usecs == 0, sp.to!string);
     }
 
-    d += dur!"hnsecs"(4);
+    // 0.3 usecs, but Method 3 precision is only 0.25 of usec,
+    // thus, expected value is 2
+    d += dur!"hnsecs"(3);
     setElapsedOffset(d);
 
     const uuidv7_milli_2 = f.createUUIDv7_method3().v7Timestamp;
@@ -1505,7 +1507,8 @@ unittest
 
         const sp = st.fracSecs.split!("msecs", "usecs", "hnsecs");
         assert(sp.msecs == 123, sp.to!string);
-        assert(sp.usecs == 1, sp.to!string);
+        assert(sp.usecs == 0, sp.to!string);
+        assert(sp.hnsecs == 2, sp.to!string);
     }
 }
 
