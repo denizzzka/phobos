@@ -1413,7 +1413,7 @@ class MonotonicUUIDsFactory
     private __gshared StopWatch epochTimePoint;
 
     ///
-    this(in SysTime startTime = SysTime.fromUnixTime(0))
+    this(in SysTime startTime = SysTime.fromUnixTime(0)) shared
     {
         mtx = new shared Mutex();
 
@@ -1429,7 +1429,7 @@ class MonotonicUUIDsFactory
      * Returns a monotonic timestamp + random based UUIDv7
      * as described in RFC 9562 (Method 3).
      */
-    UUID createUUIDv7_method3(ubyte[8] rnd = generateV7RandomData!8)
+    UUID createUUIDv7_method3(ubyte[8] rnd = generateV7RandomData!8) shared
     {
         mtx.lock();
         scope(exit) mtx.unlock();
@@ -1466,7 +1466,7 @@ unittest
     import std.conv : to;
     import std.datetime;
 
-    auto f = new MonotonicUUIDsFactory;
+    auto f = new shared MonotonicUUIDsFactory;
 
     // trick to give reproducible testing
     Duration setElapsedOffset(Duration dura){
