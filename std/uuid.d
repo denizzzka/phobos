@@ -1418,12 +1418,14 @@ class MonotonicUUIDsFactory
     }
 
     ///
-    this(in Duration timeElapsed) shared
+    this(in Duration timeElapsed, bool autostartDisabledForTesting = false) shared
     {
         mtx = new shared Mutex();
 
-        (cast() startTimePoint).start();
         (cast() startTimePoint).setTimeElapsed = timeElapsed;
+
+        if(!autostartDisabledForTesting)
+            (cast() startTimePoint).start();
     }
 
     private auto peek() shared
@@ -1442,7 +1444,7 @@ class MonotonicUUIDsFactory
      * Returns a monotonic timestamp + random based UUIDv7
      * as described in RFC 9562 (Method 3).
      */
-    UUID createUUIDv7_method3(ubyte[8] rnd = generateRandomData!8) shared
+    UUID createUUIDv7_method3(ubyte[8] externalRandom = generateRandomData!8) shared
     {
         const curr = peek.split!("msecs", "hnsecs");
         const qhnsecs = cast(ushort) (curr.hnsecs * subMsecsPart);
@@ -1453,7 +1455,7 @@ class MonotonicUUIDsFactory
         // additional 4 less significant bits consumed
         // by a version value
         rand[0 .. 2] = qhnsecs.nativeToBigEndian;
-        rand[2 .. $] = rnd;
+        rand[2 .. $] = externalRandom;
 
         return UUID(curr.msecs, rand);
     }
@@ -1470,11 +1472,18 @@ class MonotonicUUIDsFactory
     import std.stdio;
     d.writeln;
 
-    auto f = new shared MonotonicUUIDsFactory(d);
+    auto f = new shared MonotonicUUIDsFactory(d, true);
 
     ubyte[8] random = 0;
+    random[0] = 1;
     //~ const u1 = f.createUUIDv7_method3(random);
     const u1 = f.createUUIDv7_method3();
+    assert(u1.uuidVersion == UUID.Version.timestampRandom);
+
+    // sub-millisecond part zeroed
+    assert((u1.data[6] & 0b0000_1111) == 0);
+    assert(u1.data[7] == 0);
+
     const uuidv7_milli_1 = u1.v7Timestamp;
 
     {
@@ -1491,7 +1500,7 @@ class MonotonicUUIDsFactory
     // 0.3 usecs, but Method 3 precision is only 0.25 of usec,
     // thus, expected value is 2
     d += dur!"hnsecs"(3);
-    f = new shared MonotonicUUIDsFactory(d);
+    f = new shared MonotonicUUIDsFactory(d, true);
 
     const u2 = f.createUUIDv7_method3();
     const uuidv7_milli_2 = u2.v7Timestamp;
