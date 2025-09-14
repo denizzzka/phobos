@@ -1473,8 +1473,8 @@ class MonotonicUUIDsFactory
     auto f = new shared MonotonicUUIDsFactory(d);
 
     ubyte[8] random = 0;
-    const u1 = f.createUUIDv7_method3(random);
-    //~ const u1 = f.createUUIDv7_method3();
+    //~ const u1 = f.createUUIDv7_method3(random);
+    const u1 = f.createUUIDv7_method3();
     const uuidv7_milli_1 = u1.v7Timestamp;
 
     {
