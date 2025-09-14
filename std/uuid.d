@@ -1405,23 +1405,25 @@ if (isInputRange!RNG && isIntegral!(ElementType!RNG))
 class MonotonicUUIDsFactory
 {
     import core.sync.mutex : Mutex;
+    import core.time : Duration;
     import std.datetime.stopwatch : StopWatch;
 
     private shared Mutex mtx;
     private StopWatch startTimePoint;
 
-    // Passthrough for old compilers
-    //FIXME: for unknown reason calling of this method causes SIGSEGV, but it works well as template
-    version (unittest)
-    ref __start()() shared => cast() startTimePoint;
-
     ///
     this(in SysTime startTime = SysTime.fromUnixTime(0)) shared
+    {
+        this(Clock.currTime - startTime);
+    }
+
+    ///
+    this(in Duration timeElapsed) shared
     {
         mtx = new shared Mutex();
 
         (cast() startTimePoint).start();
-        (cast() startTimePoint).setTimeElapsed = Clock.currTime - startTime;
+        (cast() startTimePoint).setTimeElapsed = timeElapsed;
     }
 
     private auto peek() shared
@@ -1440,8 +1442,7 @@ class MonotonicUUIDsFactory
      * Returns a monotonic timestamp + random based UUIDv7
      * as described in RFC 9562 (Method 3).
      */
-    //FIXME: for unknown reason calling of this method causes SIGSEGV, but it works well as template
-    UUID createUUIDv7_method3()(ubyte[8] rnd = generateV7RandomData!8) shared
+    UUID createUUIDv7_method3(ubyte[8] rnd = generateV7RandomData!8) shared
     {
         const curr = peek.split!("msecs", "hnsecs");
         const qhnsecs = cast(ushort) (curr.hnsecs * subMsecsPart);
@@ -1464,29 +1465,25 @@ class MonotonicUUIDsFactory
     import std.conv : to;
     import std.datetime;
 
-    scope f = new shared MonotonicUUIDsFactory;
+    const currTime = SysTime(DateTime(2025, 9, 12, 21, 38, 45), UTC());
+    Duration d = currTime - SysTime.fromUnixTime(0) + dur!"msecs"(123);
+    import std.stdio;
+    d.writeln;
 
-    // trick to give reproducible testing
-    Duration setElapsedOffset(Duration dura){
-        if (f.__start.running)
-            f.__start.stop();
+    auto f = new shared MonotonicUUIDsFactory(d);
 
-        const st = SysTime(DateTime(2025, 9, 12, 21, 38, 45), UTC());
-        Duration ret = st - SysTime.fromUnixTime(0) + dura;
-        f.__start.setTimeElapsed = ret;
-        return ret;
-    }
-
-    Duration d = dur!"msecs"(123);
-    setElapsedOffset(d);
-
-    const uuidv7_milli = f.createUUIDv7_method3().v7Timestamp;
+    ubyte[8] random = 0;
+    const u1 = f.createUUIDv7_method3(random);
+    //~ const u1 = f.createUUIDv7_method3();
+    const uuidv7_milli_1 = u1.v7Timestamp;
 
     {
-        const st = f.createUUIDv7_method3().v7Timestamp_method3;
-        assert(cast(DateTime) st == DateTime(2025, 9, 12, 21, 38, 45), st.to!string);
+        const st = u1.v7Timestamp_method3;
+        u1.writeln;
+        st.writeln;
+        assert(cast(DateTime) st == cast(DateTime) currTime, st.to!string);
 
-        const sp = st.fracSecs.split!("msecs", "usecs");
+        const sp = st.fracSecs.split!("msecs", "usecs", "hnsecs");
         assert(sp.msecs == 123, sp.to!string);
         assert(sp.usecs == 0, sp.to!string);
     }
@@ -1494,14 +1491,15 @@ class MonotonicUUIDsFactory
     // 0.3 usecs, but Method 3 precision is only 0.25 of usec,
     // thus, expected value is 2
     d += dur!"hnsecs"(3);
-    setElapsedOffset(d);
+    f = new shared MonotonicUUIDsFactory(d);
 
-    const uuidv7_milli_2 = f.createUUIDv7_method3().v7Timestamp;
-    assert(uuidv7_milli == uuidv7_milli_2);
+    const u2 = f.createUUIDv7_method3();
+    const uuidv7_milli_2 = u2.v7Timestamp;
+    assert(uuidv7_milli_1 == uuidv7_milli_2);
 
     {
-        const st = f.createUUIDv7_method3().v7Timestamp_method3;
-        assert(cast(DateTime) st == DateTime(2025, 9, 12, 21, 38, 45), st.to!string);
+        const st = u2.v7Timestamp_method3;
+        assert(cast(DateTime) st == cast(DateTime) currTime, st.to!string);
 
         const sp = st.fracSecs.split!("msecs", "usecs", "hnsecs");
         assert(sp.msecs == 123, sp.to!string);
