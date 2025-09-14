@@ -324,14 +324,14 @@ public struct UUID
          *   random = UUID V7 has 74 bits of random data, which rounds to 10 ubyte's.
          *    If no random data is given, random data is generated.
          */
-        @safe pure this(SysTime timestamp, ubyte[10] random = generateV7RandomData!10)
+        @safe pure this(SysTime timestamp, ubyte[10] random = generateRandomData!10)
         {
             ulong epoch = (timestamp - SysTime.fromUnixTime(0)).total!"msecs";
             this(epoch, random);
         }
 
         /// ditto
-        @safe pure this(ulong epoch_msecs, ubyte[10] random = generateV7RandomData!10)
+        @safe pure this(ulong epoch_msecs, ubyte[10] random = generateRandomData!10)
         {
             ubyte[8] epoch = epoch_msecs.nativeToBigEndian;
 
@@ -1442,7 +1442,7 @@ class MonotonicUUIDsFactory
      * Returns a monotonic timestamp + random based UUIDv7
      * as described in RFC 9562 (Method 3).
      */
-    UUID createUUIDv7_method3(ubyte[8] rnd = generateV7RandomData!8) shared
+    UUID createUUIDv7_method3(ubyte[8] rnd = generateRandomData!8) shared
     {
         const curr = peek.split!("msecs", "hnsecs");
         const qhnsecs = cast(ushort) (curr.hnsecs * subMsecsPart);
@@ -1938,7 +1938,7 @@ enum uuidRegex = "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}"~
     ]);
 }
 
-private ubyte[Size] generateV7RandomData(ubyte Size)() {
+private ubyte[Size] generateRandomData(ubyte Size)() {
     import std.random : Random, uniform, unpredictableSeed;
 
     auto rnd = Random(unpredictableSeed!(ubyte)());
