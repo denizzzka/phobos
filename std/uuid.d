@@ -1469,14 +1469,9 @@ class MonotonicUUIDsFactory
 
     const currTime = SysTime(DateTime(2025, 9, 12, 21, 38, 45), UTC());
     Duration d = currTime - SysTime.fromUnixTime(0) + dur!"msecs"(123);
-    import std.stdio;
-    d.writeln;
 
     auto f = new shared MonotonicUUIDsFactory(d, true);
 
-    ubyte[8] random = 0;
-    random[0] = 1;
-    //~ const u1 = f.createUUIDv7_method3(random);
     const u1 = f.createUUIDv7_method3();
     assert(u1.uuidVersion == UUID.Version.timestampRandom);
 
@@ -1488,8 +1483,6 @@ class MonotonicUUIDsFactory
 
     {
         const st = u1.v7Timestamp_method3;
-        u1.writeln;
-        st.writeln;
         assert(cast(DateTime) st == cast(DateTime) currTime, st.to!string);
 
         const sp = st.fracSecs.split!("msecs", "usecs", "hnsecs");
